@@ -1,5 +1,6 @@
 package com.heshan.hedis.shared.util;
 
+import com.heshan.hedis.shared.codec.*;
 import com.heshan.hedis.shared.exception.HedisProtocolException;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ByteProcessor;
@@ -11,8 +12,6 @@ import io.netty.util.ByteProcessor;
  * @date 2019-06-28
  */
 public final class HedisMessageUtils {
-
-    private static final short CRLF = ('\r' << 1) | '\n';
 
     public static ByteBuf readLine(ByteBuf buf) {
         if (buf.readableBytes() <= 0) {
@@ -26,15 +25,23 @@ public final class HedisMessageUtils {
             throw new HedisProtocolException();
         }
 
-        ByteBuf line = buf.slice(buf.readerIndex(), index - buf.readerIndex() - 1);
+        int length = index - buf.readerIndex() - 1;
+        ByteBuf line = buf.slice(buf.readerIndex(), length);
+        buf.readerIndex(buf.readerIndex() + length);
         readCRLF(buf);
 
         return line;
     }
 
     public static void readCRLF(ByteBuf buf) {
-        short data = buf.readShort();
-        if (data != CRLF) {
+        if (buf.readableBytes() < 2) {
+            throw new HedisProtocolException();
+        }
+
+        byte[] data = new byte[2];
+        buf.readBytes(data);
+
+        if (data[0] != '\r' || data[1] != '\n') {
             throw new HedisProtocolException();
         }
     }
@@ -67,8 +74,36 @@ public final class HedisMessageUtils {
         }
 
         ByteBuf content = buf.slice(buf.readerIndex(), length);
+        buf.readerIndex(buf.readerIndex() + length);
         readCRLF(buf);
 
         return content;
+    }
+
+    public static AbstractHedisMessage readMessage(ByteBuf buf) {
+        AbstractHedisMessage msg;
+
+        char ch = (char) buf.readByte();
+        switch (ch) {
+            case ':':
+                msg = new NumberHedisMessage();
+                break;
+            case '-':
+                msg = new ErrorHedisMessage();
+                break;
+            case '+':
+                msg = new StringHedisMessage();
+                break;
+            case '$':
+                msg = new BatchHedisMessage();
+                break;
+            case '*':
+                msg = new ArrayHedisMessage();
+                break;
+            default:
+                throw new HedisProtocolException();
+        }
+
+        return msg;
     }
 }
