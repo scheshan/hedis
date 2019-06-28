@@ -1,6 +1,7 @@
 package com.heshan.hedis.server;
 
 import com.heshan.hedis.server.handler.HedisCommandHandler;
+import com.heshan.hedis.server.handler.SessionHandler;
 import com.heshan.hedis.shared.handler.HedisMessageDecoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -37,6 +38,7 @@ public class HedisServer {
                     protected void initChannel(Channel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new HedisMessageDecoder())
+                                .addLast(new SessionHandler())
                                 .addLast(new HedisCommandHandler());
                     }
                 })

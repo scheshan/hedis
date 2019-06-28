@@ -22,6 +22,5 @@ public class HedisCommandHandler extends ChannelInboundHandlerAdapter {
         ByteBuf buf = ctx.alloc().buffer();
         buf.writeCharSequence("*-1\r\n", CharsetUtil.UTF_8);
         ctx.writeAndFlush(buf);
-        buf.release();
     }
 }
