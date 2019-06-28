@@ -33,6 +33,7 @@ public class HedisMessageDecoder extends ByteToMessageDecoder {
 
             if (msg.isFinish()) {
                 out.add(msg);
+                msg = null;
             } else {
                 return;
             }
