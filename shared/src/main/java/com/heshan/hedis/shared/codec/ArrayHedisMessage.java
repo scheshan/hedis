@@ -4,6 +4,7 @@ import com.heshan.hedis.shared.exception.HedisProtocolException;
 import com.heshan.hedis.shared.util.HedisMessageUtils;
 import io.netty.buffer.ByteBuf;
 
+import java.util.Collection;
 import java.util.LinkedList;
 
 /**
@@ -68,5 +69,13 @@ public class ArrayHedisMessage extends AbstractHedisMessage {
         }
 
         return sb.toString();
+    }
+
+    public int length() {
+        return length;
+    }
+
+    public Collection<AbstractHedisMessage> messages() {
+        return messages;
     }
 }

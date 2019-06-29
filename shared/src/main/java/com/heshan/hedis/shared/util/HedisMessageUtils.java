@@ -13,6 +13,8 @@ import io.netty.util.ByteProcessor;
  */
 public final class HedisMessageUtils {
 
+    private static final byte[] CRLF = new byte[]{'\r', '\n'};
+
     public static ByteBuf readLine(ByteBuf buf) {
         if (buf.readableBytes() <= 0) {
             return null;
@@ -41,7 +43,7 @@ public final class HedisMessageUtils {
         byte[] data = new byte[2];
         buf.readBytes(data);
 
-        if (data[0] != '\r' || data[1] != '\n') {
+        if (data[0] != CRLF[0] || data[1] != CRLF[1]) {
             throw new HedisProtocolException();
         }
     }
@@ -105,5 +107,13 @@ public final class HedisMessageUtils {
         }
 
         return msg;
+    }
+
+    public static void writeChar(ByteBuf buf, char ch) {
+        buf.writeByte((byte) ch);
+    }
+
+    public static void writeCRLF(ByteBuf buf) {
+        buf.writeBytes(CRLF);
     }
 }

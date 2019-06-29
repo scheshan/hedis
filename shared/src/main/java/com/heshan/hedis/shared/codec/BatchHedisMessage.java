@@ -15,6 +15,14 @@ public class BatchHedisMessage extends AbstractHedisMessage {
 
     private int length = -2;
 
+    public BatchHedisMessage(){
+
+    }
+
+    public BatchHedisMessage(int length, String content){
+
+    }
+
     @Override
     protected void doRead(ByteBuf buf) {
         if (length < -1) {
@@ -41,5 +49,9 @@ public class BatchHedisMessage extends AbstractHedisMessage {
 
         content = data.readCharSequence(data.readableBytes(), CharsetUtil.UTF_8).toString();
         finish = true;
+    }
+
+    public int length() {
+        return length;
     }
 }

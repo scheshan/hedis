@@ -24,4 +24,8 @@ public class NumberHedisMessage extends AbstractHedisMessage {
         content = String.valueOf(value);
         finish = true;
     }
+
+    public long value() {
+        return value;
+    }
 }
