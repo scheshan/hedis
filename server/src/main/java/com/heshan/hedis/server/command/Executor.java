@@ -1,13 +1,13 @@
 package com.heshan.hedis.server.command;
 
-import com.heshan.hedis.shared.codec.BatchHedisMessage;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Executor {
 
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    private static CommandFactory commandFactory = CommandFactory.getInstance();
 
     private Executor() {
 
@@ -33,7 +33,7 @@ public class Executor {
 
         @Override
         public void run() {
-            request.session().writeAndFlush(new BatchHedisMessage(null));
+            commandFactory.createCommand("").execute(request.session(), null);
         }
     }
 }
