@@ -1,6 +1,6 @@
 package com.heshan.hedis.server;
 
-import com.heshan.hedis.server.handler.HedisCommandHandler;
+import com.heshan.hedis.server.handler.CommandHandler;
 import com.heshan.hedis.server.handler.SessionHandler;
 import com.heshan.hedis.shared.handler.HedisMessageDecoder;
 import com.heshan.hedis.shared.handler.HedisMessageEncoder;
@@ -41,7 +41,7 @@ public class HedisServer {
                         pipeline.addLast(new HedisMessageDecoder())
                                 .addLast(new HedisMessageEncoder())
                                 .addLast(new SessionHandler())
-                                .addLast(new HedisCommandHandler());
+                                .addLast(new CommandHandler());
                     }
                 })
                 .channel(NioServerSocketChannel.class);

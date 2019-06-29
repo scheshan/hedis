@@ -1,21 +1,21 @@
 package com.heshan.hedis.server.handler;
 
-import com.heshan.hedis.server.command.CommandInvoker;
-import com.heshan.hedis.server.command.RequestCommand;
+import com.heshan.hedis.server.command.Executor;
+import com.heshan.hedis.server.command.RequestWrapper;
 import com.heshan.hedis.server.session.SessionManager;
 import com.heshan.hedis.shared.codec.HedisMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
- * HedisCommandHandler
+ * CommandHandler
  *
  * @author heshan
  * @date 2019-06-28
  */
-public class HedisCommandHandler extends ChannelInboundHandlerAdapter {
+public class CommandHandler extends ChannelInboundHandlerAdapter {
 
-    private static CommandInvoker invoker = CommandInvoker.instance();
+    private static Executor executor = Executor.getInstance();
 
     private static SessionManager sessionManager = SessionManager.getInstance();
 
@@ -23,7 +23,7 @@ public class HedisCommandHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         HedisMessage message = (HedisMessage) msg;
 
-        RequestCommand cmd = new RequestCommand(sessionManager.get(ctx.channel()), message);
-        invoker.enqueue(cmd);
+        RequestWrapper request = new RequestWrapper(message, sessionManager.get(ctx.channel()));
+        executor.execute(request);
     }
 }
