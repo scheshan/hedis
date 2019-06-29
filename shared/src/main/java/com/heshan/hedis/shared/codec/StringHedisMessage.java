@@ -1,25 +1,20 @@
 package com.heshan.hedis.shared.codec;
 
-import com.heshan.hedis.shared.util.HedisMessageUtils;
-import io.netty.buffer.ByteBuf;
-import io.netty.util.CharsetUtil;
-
 /**
  * StringHedisMessage
  *
  * @author heshan
  * @date 2019-06-28
  */
-public class StringHedisMessage extends AbstractHedisMessage {
+public class StringHedisMessage implements HedisMessage {
 
-    @Override
-    protected void doRead(ByteBuf buf) {
-        ByteBuf line = HedisMessageUtils.readLine(buf);
-        if (line == null) {
-            return;
-        }
+    private String content;
 
-        content = line.readCharSequence(line.readableBytes(), CharsetUtil.UTF_8).toString();
-        finish = true;
+    public StringHedisMessage(String content) {
+        this.content = content;
+    }
+
+    public String content() {
+        return content;
     }
 }

@@ -1,6 +1,5 @@
 package com.heshan.hedis.shared.util;
 
-import com.heshan.hedis.shared.codec.*;
 import com.heshan.hedis.shared.exception.HedisProtocolException;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ByteProcessor;
@@ -80,33 +79,6 @@ public final class HedisMessageUtils {
         readCRLF(buf);
 
         return content;
-    }
-
-    public static AbstractHedisMessage readMessage(ByteBuf buf) {
-        AbstractHedisMessage msg;
-
-        char ch = (char) buf.readByte();
-        switch (ch) {
-            case ':':
-                msg = new NumberHedisMessage();
-                break;
-            case '-':
-                msg = new ErrorHedisMessage();
-                break;
-            case '+':
-                msg = new StringHedisMessage();
-                break;
-            case '$':
-                msg = new BatchHedisMessage();
-                break;
-            case '*':
-                msg = new ArrayHedisMessage();
-                break;
-            default:
-                throw new HedisProtocolException();
-        }
-
-        return msg;
     }
 
     public static void writeChar(ByteBuf buf, char ch) {

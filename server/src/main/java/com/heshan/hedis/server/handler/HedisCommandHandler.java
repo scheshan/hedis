@@ -1,6 +1,6 @@
 package com.heshan.hedis.server.handler;
 
-import com.heshan.hedis.shared.codec.AbstractHedisMessage;
+import com.heshan.hedis.shared.codec.HedisMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -16,8 +16,8 @@ public class HedisCommandHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        AbstractHedisMessage message = (AbstractHedisMessage) msg;
-        System.out.println(message.content());
+        HedisMessage message = (HedisMessage) msg;
+        System.out.println(message.toString());
 
         ByteBuf buf = ctx.alloc().buffer();
         buf.writeCharSequence("*-1\r\n", CharsetUtil.UTF_8);
