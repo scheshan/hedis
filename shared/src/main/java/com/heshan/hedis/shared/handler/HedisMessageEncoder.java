@@ -54,9 +54,10 @@ public class HedisMessageEncoder extends MessageToByteEncoder<HedisMessage> {
     private void writeBatchMessage(ByteBuf buf, BatchHedisMessage msg) {
         HedisMessageUtils.writeChar(buf, '$');
         String content = msg.content();
-        writeNumber(buf, content.length());
-
-        if (content.length() > 0) {
+        if (content == null) {
+            writeNumber(buf, -1);
+        } else {
+            writeNumber(buf, content.length());
             writeString(buf, content);
         }
     }

@@ -1,10 +1,9 @@
 package com.heshan.hedis.server.handler;
 
+import com.heshan.hedis.shared.codec.BatchHedisMessage;
 import com.heshan.hedis.shared.codec.HedisMessage;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.CharsetUtil;
 
 /**
  * HedisCommandHandler
@@ -19,8 +18,7 @@ public class HedisCommandHandler extends ChannelInboundHandlerAdapter {
         HedisMessage message = (HedisMessage) msg;
         System.out.println(message.toString());
 
-        ByteBuf buf = ctx.alloc().buffer();
-        buf.writeCharSequence("*-1\r\n", CharsetUtil.UTF_8);
-        ctx.writeAndFlush(buf);
+        HedisMessage res = new BatchHedisMessage(null);
+        ctx.writeAndFlush(res);
     }
 }
