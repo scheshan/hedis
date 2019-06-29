@@ -1,5 +1,6 @@
 package com.heshan.hedis.server.session;
 
+import com.heshan.hedis.shared.codec.HedisMessage;
 import io.netty.channel.Channel;
 
 import java.util.UUID;
@@ -30,5 +31,9 @@ public class HedisSession {
 
     public Channel channel() {
         return channel;
+    }
+
+    public void writeAndFlush(HedisMessage message) {
+        channel.writeAndFlush(message);
     }
 }
