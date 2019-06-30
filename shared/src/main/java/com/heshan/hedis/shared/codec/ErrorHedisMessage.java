@@ -14,6 +14,7 @@ public class ErrorHedisMessage implements HedisMessage {
         this.content = content;
     }
 
+    @Override
     public String content() {
         return content;
     }

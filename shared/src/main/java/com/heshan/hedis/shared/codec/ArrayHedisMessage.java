@@ -23,4 +23,9 @@ public class ArrayHedisMessage implements HedisMessage {
     public Collection<HedisMessage> messages() {
         return messages;
     }
+
+    @Override
+    public String content() {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -1,19 +1,21 @@
 package com.heshan.hedis.server.command;
 
-import com.heshan.hedis.server.command.ping.PingCommand;
+import com.heshan.hedis.server.command.connection.PingCommand;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class CommandFactory {
 
+    private Map<String, HedisCommand> commandMap = new HashMap<>();
+
     private CommandFactory() {
-
-    }
-
-    public void init() {
-
+        commandMap.put("ping", new PingCommand());
     }
 
     public HedisCommand createCommand(String name) {
-        return new PingCommand();
+        HedisCommand cmd = commandMap.get(name.toLowerCase());
+        return cmd;
     }
 
     private static CommandFactory instance = new CommandFactory();

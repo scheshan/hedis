@@ -10,11 +10,19 @@ public class NumberHedisMessage implements HedisMessage {
 
     private long value;
 
+    private String content;
+
     public NumberHedisMessage(long value) {
         this.value = value;
+        content = String.valueOf(value);
     }
 
     public long value() {
         return value;
+    }
+
+    @Override
+    public String content() {
+        return content;
     }
 }

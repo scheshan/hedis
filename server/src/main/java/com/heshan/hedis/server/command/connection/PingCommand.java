@@ -1,4 +1,4 @@
-package com.heshan.hedis.server.command.ping;
+package com.heshan.hedis.server.command.connection;
 
 import com.heshan.hedis.server.command.AbstractHedisCommand;
 import com.heshan.hedis.server.session.HedisSession;
