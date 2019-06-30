@@ -57,7 +57,7 @@ public final class HedisMessageUtils {
             buf.readerIndex(buf.readerIndex() - 1);
         }
 
-        for (int i = 0; i < buf.readableBytes(); i++) {
+        for (int i = 0; i <= buf.readableBytes(); i++) {
             char ch = (char) buf.readByte();
             if (ch < '0' && ch > '9') {
                 throw new HedisProtocolException();
