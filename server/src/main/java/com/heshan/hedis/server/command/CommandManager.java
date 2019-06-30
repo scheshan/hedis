@@ -5,11 +5,11 @@ import com.heshan.hedis.server.command.connection.PingCommand;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CommandFactory {
+public class CommandManager {
 
     private Map<String, HedisCommand> commandMap = new HashMap<>();
 
-    private CommandFactory() {
+    private CommandManager() {
         commandMap.put("ping", new PingCommand());
     }
 
@@ -18,9 +18,9 @@ public class CommandFactory {
         return cmd;
     }
 
-    private static CommandFactory instance = new CommandFactory();
+    private static CommandManager instance = new CommandManager();
 
-    public static CommandFactory getInstance() {
+    public static CommandManager getInstance() {
         return instance;
     }
 }

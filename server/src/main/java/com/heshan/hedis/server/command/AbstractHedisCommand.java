@@ -4,7 +4,7 @@ import com.heshan.hedis.server.session.SessionManager;
 
 public abstract class AbstractHedisCommand implements HedisCommand {
 
-    protected final CommandFactory commandFactory = CommandFactory.getInstance();
+    protected final CommandManager commandManager = CommandManager.getInstance();
 
     protected final SessionManager sessionManager = SessionManager.getInstance();
 }

@@ -14,7 +14,7 @@ public class Executor {
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private static CommandFactory commandFactory = CommandFactory.getInstance();
+    private static CommandManager commandManager = CommandManager.getInstance();
 
     private Executor() {
 
@@ -49,13 +49,14 @@ public class Executor {
         public void run() {
             try {
                 parse();
-                HedisCommand command = commandFactory.createCommand(commandName);
+                HedisCommand command = commandManager.createCommand(commandName);
                 if (command == null) {
                     throw new HedisProtocolException();
                 }
-                command.execute(session, commandArgs);
+                HedisCommandArgument arg = new HedisCommandArgument(session, commandName, commandArgs);
+                command.execute(arg);
             } catch (Exception ex) {
-                ErrorHedisMessage res = new ErrorHedisMessage(ex.getMessage());
+                ErrorHedisMessage res = new ErrorHedisMessage("error");
                 session.writeAndFlush(res);
             }
         }

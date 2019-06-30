@@ -1,14 +1,14 @@
 package com.heshan.hedis.server.command.connection;
 
 import com.heshan.hedis.server.command.AbstractHedisCommand;
-import com.heshan.hedis.server.session.HedisSession;
+import com.heshan.hedis.server.command.HedisCommandArgument;
 import com.heshan.hedis.shared.codec.StringHedisMessage;
 
 public class PingCommand extends AbstractHedisCommand {
 
     @Override
-    public void execute(HedisSession session, String[] args) {
+    public void execute(HedisCommandArgument arg) {
         StringHedisMessage res = new StringHedisMessage("PONG");
-        session.writeAndFlush(res);
+        arg.session().writeAndFlush(res);
     }
 }
