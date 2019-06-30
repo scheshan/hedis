@@ -1,5 +1,6 @@
 package com.heshan.hedis.server.command;
 
+import com.heshan.hedis.server.command.connection.EchoCommand;
 import com.heshan.hedis.server.command.connection.PingCommand;
 
 import java.util.HashMap;
@@ -11,6 +12,7 @@ public class CommandManager {
 
     private CommandManager() {
         commandMap.put("ping", new PingCommand());
+        commandMap.put("echo", new EchoCommand());
     }
 
     public HedisCommand createCommand(String name) {
