@@ -48,6 +48,16 @@ public class Executor {
         @Override
         public void run() {
             try {
+                if (!(message instanceof ArrayHedisMessage)) {
+                    session.writeError("Invalid message");
+                    return;
+                }
+                ArrayHedisMessage msg = (ArrayHedisMessage) message;
+                if (msg.size() == 0) {
+                    session.writeError("Invalid message");
+                    return;
+                }
+
                 parse();
                 HedisCommand command = commandManager.createCommand(commandName);
                 if (command == null) {
@@ -62,18 +72,13 @@ public class Executor {
         }
 
         private void parse() {
-            if (message instanceof ArrayHedisMessage) {
-                Iterator<HedisMessage> messages = ((ArrayHedisMessage) message).messages().iterator();
-                commandName = messages.next().content();
+            Iterator<HedisMessage> messages = ((ArrayHedisMessage) message).messages().iterator();
+            commandName = messages.next().content();
 
-                commandArgs = new String[((ArrayHedisMessage) message).size() - 1];
-                int i = 0;
-                while (messages.hasNext()) {
-                    commandArgs[i++] = messages.next().content();
-                }
-            } else {
-                commandName = message.content();
-                commandArgs = new String[0];
+            commandArgs = new String[((ArrayHedisMessage) message).size() - 1];
+            int i = 0;
+            while (messages.hasNext()) {
+                commandArgs[i++] = messages.next().content();
             }
         }
     }

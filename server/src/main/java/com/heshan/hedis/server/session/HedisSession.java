@@ -1,5 +1,6 @@
 package com.heshan.hedis.server.session;
 
+import com.heshan.hedis.shared.codec.ErrorHedisMessage;
 import com.heshan.hedis.shared.codec.HedisMessage;
 import io.netty.channel.Channel;
 
@@ -35,5 +36,10 @@ public class HedisSession {
 
     public void writeAndFlush(HedisMessage message) {
         channel.writeAndFlush(message);
+    }
+
+    public void writeError(String errorMessage) {
+        HedisMessage res = new ErrorHedisMessage(errorMessage);
+        writeAndFlush(res);
     }
 }

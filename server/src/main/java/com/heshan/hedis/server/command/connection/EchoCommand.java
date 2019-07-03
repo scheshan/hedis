@@ -12,8 +12,12 @@ import com.heshan.hedis.shared.codec.StringHedisMessage;
  */
 public class EchoCommand extends AbstractHedisCommand {
 
+    public EchoCommand() {
+        super(1, 1);
+    }
+
     @Override
-    public void execute(HedisCommandArgument arg) {
+    public void doExecute(HedisCommandArgument arg) {
         StringHedisMessage res = new StringHedisMessage(arg.args()[0]);
         arg.session().writeAndFlush(res);
     }
