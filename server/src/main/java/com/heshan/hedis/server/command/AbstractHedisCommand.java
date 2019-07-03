@@ -25,9 +25,11 @@ public abstract class AbstractHedisCommand implements HedisCommand {
 
         if (minArgs > -1 && argLength < minArgs) {
             arg.session().writeError("Wrong argument number");
+            return;
         }
         if (maxArgs > -1 && argLength > maxArgs) {
             arg.session().writeError("Wrong argument number");
+            return;
         }
 
         doExecute(arg);

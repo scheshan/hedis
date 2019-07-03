@@ -66,7 +66,7 @@ public class Executor {
                 HedisCommandArgument arg = new HedisCommandArgument(session, commandName, commandArgs);
                 command.execute(arg);
             } catch (Exception ex) {
-                ErrorHedisMessage res = new ErrorHedisMessage("error");
+                ErrorHedisMessage res = new ErrorHedisMessage(ex.getMessage());
                 session.writeAndFlush(res);
             }
         }
