@@ -16,10 +16,5 @@ func main() {
 		fmt.Println(err)
 	}
 
-	<-time.After(5 * time.Second)
-	ser.Stop()
-
-	fmt.Println("closed")
-
 	<-time.After(100000 * time.Second)
 }
