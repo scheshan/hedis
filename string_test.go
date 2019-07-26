@@ -2,6 +2,7 @@ package hedis
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -41,5 +42,21 @@ func TestString_SliceLength(t *testing.T) {
 	fmt.Println(s.SliceLength(5, 30).String())
 	if s.SliceLength(5, 30).String() != "" {
 		t.Error("invalid")
+	}
+}
+
+func TestString_Split(t *testing.T) {
+	c := "a b c d e"
+	s := NewStringS(c)
+	arr1 := strings.Split(c, " ")
+	arr2 := s.Split(" ")
+
+	if len(arr1) != len(arr2) {
+		t.Error("invalid")
+	}
+	for i, str := range arr1 {
+		if arr2[i].String() != str {
+			t.Error("invalid")
+		}
 	}
 }
