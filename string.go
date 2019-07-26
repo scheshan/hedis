@@ -1,18 +1,12 @@
 package hedis
 
-import "strings"
-
-const defaultStringCapacity = 16
+import (
+	"bytes"
+	"strings"
+)
 
 type String struct {
 	buf []byte
-}
-
-func NewString() *String {
-	s := new(String)
-	s.buf = make([]byte, 0, defaultStringCapacity)
-
-	return s
 }
 
 func NewStringS(str string) *String {
@@ -93,4 +87,20 @@ func (t *String) Index(str string) int {
 
 func (t *String) Len() int {
 	return len(t.buf)
+}
+
+func (t *String) Equals(str string) bool {
+	r := bytes.Runes([]byte(str))
+
+	if len(t.buf) != len(r) {
+		return false
+	}
+
+	for i, b := range t.buf {
+		if b != byte(r[i]) {
+			return false
+		}
+	}
+
+	return true
 }

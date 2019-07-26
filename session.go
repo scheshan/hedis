@@ -27,6 +27,7 @@ type Session struct {
 	reqType requestType
 	buf     *String
 	writer  *bufio.Writer
+	closed  bool
 }
 
 func NewSession(conn *net.TCPConn) *Session {
@@ -51,6 +52,11 @@ func (t *Session) Read() {
 }
 
 func (t *Session) Close() {
+	if t.closed {
+		return
+	}
+	t.closed = true
+
 	t.server.CloseSession(t)
 
 	t.conn.Close()
@@ -62,6 +68,9 @@ func (t *Session) read() {
 	for {
 		n, err := t.conn.Read(buf)
 		if err != nil {
+			if t.closed {
+				return
+			}
 			if err != io.EOF {
 				log.Printf("%s read error: %s", t, err)
 			}

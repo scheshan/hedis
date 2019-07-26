@@ -99,8 +99,13 @@ func (t *Server) EnqueueCommand(cmd *QueryCommand) {
 
 func (t *Server) processCommand() {
 	for {
-		cmd := <-t.cmdChan
+		c := <-t.cmdChan
 
-		log.Printf("command: %s, args: %s", cmd.cmd, cmd.arg)
+		if c.cmd.Equals("exit") {
+			c.session.Close()
+			continue
+		}
+
+		log.Printf("command: %s, args: %s", c.cmd, c.arg)
 	}
 }
