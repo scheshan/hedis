@@ -17,7 +17,7 @@ type Server struct {
 	listener *net.TCPListener
 	running  bool
 	id       *int32
-	head     *Session
+	clients  *List
 	mu       *sync.Mutex
 }
 
@@ -26,6 +26,7 @@ func NewServer(c *ServerConfig) *Server {
 	s.config = c
 	s.id = new(int32)
 	s.mu = new(sync.Mutex)
+	s.clients = NewList()
 
 	return s
 }
@@ -66,11 +67,7 @@ func (t *Server) listen() {
 		id := atomic.AddInt32(t.id, 1)
 		session.Id(id)
 
-		if t.head != nil {
-			t.head.prev = session
-		}
-		session.next = t.head
-		t.head = session
+		t.clients.AddLast(session)
 
 		log.Printf("%s connected", session)
 
@@ -84,15 +81,5 @@ func (t *Server) CloseSession(s *Session) {
 
 	log.Printf("%s disconnected", s)
 
-	if s.prev == nil {
-		//head
-		t.head = s.next
-		s.next = nil
-	} else {
-		prev := s.prev
-		prev.next = s.next
-
-		s.prev = nil
-		s.next = nil
-	}
+	t.clients.Remove(s)
 }
