@@ -39,7 +39,12 @@ func (t *String) String() string {
 }
 
 func (t *String) Append(buf []byte) {
-	t.buf = append(t.buf, buf...)
+	if t.buf != nil {
+		t.buf = append(t.buf, buf...)
+	} else {
+		t.buf = make([]byte, len(buf), len(buf))
+		copy(t.buf, buf)
+	}
 }
 
 func (t *String) Split(sep string) []*String {
@@ -84,4 +89,8 @@ func (t *String) Slice(start int) *String {
 
 func (t *String) Index(str string) int {
 	return strings.Index(t.String(), str)
+}
+
+func (t *String) Len() int {
+	return len(t.buf)
 }

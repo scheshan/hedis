@@ -10,23 +10,30 @@ import (
 
 const bufSize = 16
 
+type requestType int
+
+const (
+	requestType_Ready requestType = iota
+	requestType_SingleLine
+	requestType_Bulk
+)
+
 type Session struct {
-	prev   *Session
-	next   *Session
-	conn   *net.TCPConn
-	id     int32
-	rw     *bufio.ReadWriter
-	server *Server
-	buf    []byte
+	prev    *Session
+	next    *Session
+	conn    *net.TCPConn
+	id      int32
+	server  *Server
+	reqType requestType
+	buf     *String
+	writer  *bufio.Writer
 }
 
 func NewSession(conn *net.TCPConn) *Session {
 	s := new(Session)
 	s.conn = conn
-
-	reader := bufio.NewReaderSize(s.conn, bufSize)
-	writer := bufio.NewWriterSize(s.conn, bufSize)
-	s.rw = bufio.NewReadWriter(reader, writer)
+	s.writer = bufio.NewWriterSize(s.conn, 1024)
+	s.buf = NewEmptyString()
 
 	return s
 }
@@ -44,16 +51,16 @@ func (t *Session) Read() {
 }
 
 func (t *Session) Close() {
-	t.buf = nil
 	t.server.CloseSession(t)
 
 	t.conn.Close()
 }
 
 func (t *Session) read() {
-	for {
-		line, p, err := t.rw.ReadLine()
+	buf := make([]byte, 1024, 1024)
 
+	for {
+		n, err := t.conn.Read(buf)
 		if err != nil {
 			if err != io.EOF {
 				log.Printf("%s read error: %s", t, err)
@@ -62,33 +69,42 @@ func (t *Session) read() {
 			return
 		}
 
-		if len(line) > 0 {
-			if t.buf == nil {
-				t.buf = make([]byte, len(line))
-			}
-
-			t.buf = append(t.buf, line...)
+		if n == 0 {
+			continue
 		}
 
-		if !p && t.buf != nil && len(t.buf) > 0 {
-			buf := t.buf
-			t.buf = nil
-			_, err := t.writeAndFlush(buf)
-			if err != nil {
-				log.Printf("%s closed due to write error: %s", t, err)
-				t.Close()
-			}
+		t.buf.Append(buf[:n])
+		t.processBuffer()
+	}
+}
+
+func (t *Session) processBuffer() {
+	//at beginning, only process inline command
+	for t.buf.Len() > 0 {
+		i := t.buf.Index("\r\n")
+		if i >= 0 {
+			buf := t.buf.SliceLength(0, i)
+			arr := buf.Split(" ")
+
+			cmd := new(QueryCommand)
+			cmd.session = t
+			cmd.cmd = arr[0]
+			cmd.arg = arr[1:]
+
+			t.buf = t.buf.Slice(i + 2)
+
+			t.server.EnqueueCommand(cmd)
 		}
 	}
 }
 
 func (t *Session) writeAndFlush(data []byte) (n int, err error) {
-	n, err = t.rw.Write(data)
+	n, err = t.writer.Write(data)
 	if err != nil {
 		return
 	}
 
-	err = t.rw.Flush()
+	err = t.writer.Flush()
 	return
 }
 

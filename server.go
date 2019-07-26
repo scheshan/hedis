@@ -12,6 +12,12 @@ type ServerConfig struct {
 	Addr string
 }
 
+type QueryCommand struct {
+	session *Session
+	cmd     *String
+	arg     []*String
+}
+
 type Server struct {
 	config   *ServerConfig
 	listener *net.TCPListener
@@ -19,6 +25,7 @@ type Server struct {
 	id       *int32
 	clients  *List
 	mu       *sync.Mutex
+	cmdChan  chan *QueryCommand
 }
 
 func NewServer(c *ServerConfig) *Server {
@@ -27,6 +34,7 @@ func NewServer(c *ServerConfig) *Server {
 	s.id = new(int32)
 	s.mu = new(sync.Mutex)
 	s.clients = NewList()
+	s.cmdChan = make(chan *QueryCommand, 1024)
 
 	return s
 }
@@ -45,6 +53,7 @@ func (t *Server) Start() error {
 	t.running = true
 
 	go t.listen()
+	go t.processCommand()
 	return nil
 }
 
@@ -82,4 +91,16 @@ func (t *Server) CloseSession(s *Session) {
 	log.Printf("%s disconnected", s)
 
 	t.clients.Remove(s)
+}
+
+func (t *Server) EnqueueCommand(cmd *QueryCommand) {
+	t.cmdChan <- cmd
+}
+
+func (t *Server) processCommand() {
+	for {
+		cmd := <-t.cmdChan
+
+		log.Printf("command: %s, args: %s", cmd.cmd, cmd.arg)
+	}
 }
