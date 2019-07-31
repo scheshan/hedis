@@ -28,6 +28,7 @@ type Session struct {
 	buf     *String
 	writer  *bufio.Writer
 	closed  bool
+	res     chan Message
 }
 
 func NewSession(conn *net.TCPConn) *Session {
@@ -35,6 +36,10 @@ func NewSession(conn *net.TCPConn) *Session {
 	s.conn = conn
 	s.writer = bufio.NewWriterSize(s.conn, 1024)
 	s.buf = NewEmptyString()
+	s.res = make(chan Message, 1024)
+
+	go s.read()
+	go s.processReply()
 
 	return s
 }
@@ -60,6 +65,7 @@ func (t *Session) Close() {
 	t.server.CloseSession(t)
 
 	t.conn.Close()
+	close(t.res)
 }
 
 func (t *Session) read() {
@@ -107,14 +113,18 @@ func (t *Session) processBuffer() {
 	}
 }
 
-func (t *Session) writeAndFlush(data []byte) (n int, err error) {
-	n, err = t.writer.Write(data)
-	if err != nil {
-		return
+func (t *Session) processReply() {
+	for msg := range t.res {
+		_, err := msg.Write(t.writer)
+		if err != nil {
+			log.Printf("session: %s write failed: %v", t, err)
+			t.Close()
+		}
 	}
+}
 
-	err = t.writer.Flush()
-	return
+func (t *Session) Reply(msg Message) {
+	t.res <- msg
 }
 
 func (t *Session) String() string {

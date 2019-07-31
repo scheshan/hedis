@@ -1,6 +1,7 @@
 package hedis
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -79,8 +80,6 @@ func (t *Server) listen() {
 		t.clients.AddLast(session)
 
 		log.Printf("%s connected", session)
-
-		session.Read()
 	}
 }
 
@@ -105,6 +104,13 @@ func (t *Server) processCommand() {
 			c.session.Close()
 			continue
 		}
+
+		if c.cmd.Equals("error") {
+			c.session.Reply(NewErrorMessage(errors.New("error")))
+			continue
+		}
+
+		c.session.Reply(NewStringMessage(NewStringS("hello world")))
 
 		log.Printf("command: %s, args: %s", c.cmd, c.arg)
 	}
