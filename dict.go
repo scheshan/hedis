@@ -1,5 +1,8 @@
 package hedis
 
+var dictInitSize uint32 = 16
+var dictMaxSize uint32 = 2147483647
+
 type Dict struct {
 	dt        []*dictTable
 	rehashIdx int32
@@ -85,6 +88,7 @@ func (t *Dict) Remove(k string) bool {
 				break
 			}
 
+			pre = node
 			node = node.next
 		}
 	}
@@ -150,15 +154,15 @@ func (t *Dict) expand() {
 
 	dt := t.dt[0]
 
-	size := DictInitSize
+	size := dictInitSize
 	if dt != nil && dt.size > 0 {
-		if dt.used < dt.size || dt.size >= DictMaxSize {
+		if dt.used < dt.size || dt.size >= dictMaxSize {
 			return
 		}
 
 		size = dt.size << 1
-		if size > DictMaxSize {
-			size = DictMaxSize
+		if size > dictMaxSize {
+			size = dictMaxSize
 		}
 	}
 
