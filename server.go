@@ -109,8 +109,25 @@ func (t *Server) processCommand() {
 			c.session.Reply(NewErrorMessage(errors.New("error")))
 			continue
 		}
+		if c.cmd.Equals("number") {
+			c.session.Reply(NewNumberMessage(1.33))
+			continue
+		}
+		if c.cmd.Equals("batch") {
+			c.session.Reply(NewBatchMessage(NewStringS("hello 世界")))
+			continue
+		}
+		if c.cmd.Equals("array") {
+			am := NewArrayMessage(
+				NewBatchMessage(NewStringS("hello")),
+				NewBatchMessage(NewStringS("world")),
+				NewBatchMessage(NewStringS("你好")),
+				NewBatchMessage(NewStringS("世界")))
+			c.session.Reply(am)
+			continue
+		}
 
-		c.session.Reply(NewStringMessage(NewStringS("hello world")))
+		c.session.Reply(NewStringMessage("hello world"))
 
 		log.Printf("command: %s, args: %s", c.cmd, c.arg)
 	}

@@ -120,6 +120,10 @@ func (t *Session) processReply() {
 			log.Printf("session: %s write failed: %v", t, err)
 			t.Close()
 		}
+		if err = t.writer.Flush(); err != nil {
+			log.Printf("session: %s flush failed: %v", t, err)
+			t.Close()
+		}
 	}
 }
 
