@@ -155,6 +155,7 @@ func (t *Buffer) ReadCRLF() (data []byte, b bool) {
 			t.setStart(ind + 2)
 			return data, true
 		}
+		ind++
 	}
 
 	return nil, false

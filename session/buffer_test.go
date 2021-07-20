@@ -1,6 +1,7 @@
 package session
 
 import (
+	"hedis/codec"
 	"testing"
 )
 
@@ -52,6 +53,60 @@ func TestBuffer_grow(t *testing.T) {
 
 	free = buf.RealFree()
 	if free != 0 {
+		t.Fail()
+	}
+}
+
+func TestBuffer_ReadType(t *testing.T) {
+	buf := NewBuffer(MinimalBufferSize)
+
+	buf.Append([]byte{'+', '-', ':', '$', '*'})
+
+	var mt codec.MessageType
+	var b bool
+
+	mt, b = buf.ReadType()
+	if !b || mt != codec.MessageTypeString {
+		t.Fail()
+	}
+
+	mt, b = buf.ReadType()
+	if !b || mt != codec.MessageTypeError {
+		t.Fail()
+	}
+
+	mt, b = buf.ReadType()
+	if !b || mt != codec.MessageTypeInteger {
+		t.Fail()
+	}
+
+	mt, b = buf.ReadType()
+	if !b || mt != codec.MessageTypeBulk {
+		t.Fail()
+	}
+
+	mt, b = buf.ReadType()
+	if !b || mt != codec.MessageTypeArray {
+		t.Fail()
+	}
+
+	mt, b = buf.ReadType()
+	if b || mt != codec.MessageTypeUnknown {
+		t.Fail()
+	}
+}
+
+func TestBuffer_ReadCRLF(t *testing.T) {
+	buf := NewBuffer(MinimalBufferSize)
+
+	buf.Append([]byte("hello\r\n"))
+
+	data, b := buf.ReadCRLF()
+	if !b || string(data) != "hello" {
+		t.Fail()
+	}
+
+	if buf.start != buf.end {
 		t.Fail()
 	}
 }
