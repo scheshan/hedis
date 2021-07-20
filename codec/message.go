@@ -1,5 +1,5 @@
 package codec
 
-type HMessage interface {
+type Message interface {
 	String() string
 }
