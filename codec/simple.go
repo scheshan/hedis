@@ -1,6 +1,8 @@
 package codec
 
-import "hedis/core"
+import (
+	"hedis/core"
+)
 
 type Simple struct {
 	str *core.String
@@ -8,7 +10,7 @@ type Simple struct {
 
 func NewSimple() *Simple {
 	s := &Simple{}
-	s.str = core.NewEmptyString()
+	s.str = core.NewMinimalString()
 
 	return s
 }

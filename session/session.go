@@ -1,18 +1,20 @@
 package session
 
 import (
+	"bufio"
 	"hedis/codec"
 	"net"
 )
 
 type Session struct {
-	id     int
-	conn   *net.TCPConn
-	pre    *Session
-	next   *Session
-	buffer []byte
-	list   *SessionList
-	state  codec.Message
+	id      int
+	conn    *net.TCPConn
+	pre     *Session
+	next    *Session
+	list    *SessionList
+	message codec.Message
+	reader  *bufio.Reader
+	writer  *bufio.Writer
 }
 
 func NewSession(id int, conn *net.TCPConn) *Session {
@@ -20,34 +22,33 @@ func NewSession(id int, conn *net.TCPConn) *Session {
 
 	s.id = id
 	s.conn = conn
-	s.buffer = make([]byte, 40960, 40960)
+	s.reader = bufio.NewReader(conn)
+	s.writer = bufio.NewWriter(conn)
 
 	return s
 }
 
 func (t *Session) ReadLoop() {
 	for {
-		reads, err := t.conn.Read(t.buffer)
-		if err != nil {
-			if err == net.ErrClosed {
-				t.list.Remove(t)
-			} else {
-				//TODO close the connection
-			}
-
-			return
-		}
-
-		if reads > 0 {
-			if err = t.readData(reads); err != nil {
-				//TODO close the connection
+		if t.message == nil {
+			msg, err := codec.ReadMessage(t.reader)
+			if err != nil {
+				t.handleError(err)
 				return
 			}
+
+			t.message = msg
+			continue
 		}
+
 	}
 }
 
-func (t *Session) readData(bytes int) error {
+func (t *Session) handleError(err error) {
+	t.list.Remove(t)
+}
+
+func (t *Session) ReadData() error {
 	ind := 0
 
 	for ind < bytes {

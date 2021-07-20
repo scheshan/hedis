@@ -35,7 +35,7 @@ func (t *Integer) Read(data []byte) (int, bool, error) {
 
 func NewInteger() *Integer {
 	i := &Integer{}
-	i.str = core.NewEmptyString()
+	i.str = core.NewMinimalString()
 
 	return i
 }

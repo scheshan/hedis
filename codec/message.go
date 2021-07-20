@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"bufio"
 	"errors"
 )
 
@@ -11,12 +12,11 @@ type Message interface {
 	Read(data []byte) (int, bool, error)
 }
 
-func ReadMessage(data []byte) (Message, error) {
-	if len(data) == 0 {
-		return nil, InvalidMessage
+func ReadMessage(reader *bufio.Reader) (Message, error) {
+	b, err := reader.ReadByte()
+	if err != nil {
+		return nil, err
 	}
-
-	b := data[0]
 
 	switch b {
 	case '+':

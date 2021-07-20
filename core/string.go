@@ -12,6 +12,10 @@ func (t *String) Len() int {
 	return len(t.buf)
 }
 
+func (t *String) Cap() int {
+	return cap(t.buf)
+}
+
 func (t *String) Append(data []byte) {
 	t.buf = append(t.buf, data...)
 }
@@ -26,9 +30,13 @@ func (t *String) String() string {
 
 func NewEmptyString() *String {
 	str := &String{}
-	str.buf = make([]byte, 16, 16)
+	str.buf = make([]byte, 0, 0)
 
 	return str
+}
+
+func NewMinimalString() *String {
+	return NewString(16)
 }
 
 func NewString(size int) *String {
