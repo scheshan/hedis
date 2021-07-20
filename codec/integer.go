@@ -1,9 +1,13 @@
 package codec
 
-import "hedis/core"
+import (
+	"hedis/core"
+	"strconv"
+)
 
 type Integer struct {
 	str *core.String
+	num int
 }
 
 func (t *Integer) String() string {
@@ -11,7 +15,22 @@ func (t *Integer) String() string {
 }
 
 func (t *Integer) Read(data []byte) (int, bool, error) {
-	return 0, true, nil
+	reads := ReadCRLF(data)
+	if reads == 0 {
+		t.str.Append(data)
+		return reads, false, nil
+	}
+
+	t.str.Append(data[0:reads])
+
+	var err error
+	t.num, err = strconv.Atoi(t.str.String())
+
+	if err != nil {
+		return reads + 2, false, err
+	}
+
+	return reads + 2, true, err
 }
 
 func NewInteger() *Integer {
