@@ -8,14 +8,23 @@ type Simple struct {
 
 func NewSimple() *Simple {
 	s := &Simple{}
-	s.str = core.NewString()
+	s.str = core.NewEmptyString()
+
 	return s
 }
 
 func (t *Simple) String() string {
-	return ""
+	return t.str.String()
 }
 
 func (t *Simple) Read(data []byte) (int, bool, error) {
-	return 0, true, nil
+	reads := ReadCRLF(data)
+
+	if reads == 0 {
+		t.str.Append(data)
+		return len(data), false, nil
+	}
+
+	t.str.Append(data[0:reads])
+	return reads + 2, true, nil
 }

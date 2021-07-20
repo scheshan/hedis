@@ -41,5 +41,5 @@ func ReadCRLF(data []byte) int {
 		}
 	}
 
-	return -1
+	return 0
 }

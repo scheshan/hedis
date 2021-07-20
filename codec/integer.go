@@ -16,7 +16,7 @@ func (t *Integer) Read(data []byte) (int, bool, error) {
 
 func NewInteger() *Integer {
 	i := &Integer{}
-	i.str = core.NewString()
+	i.str = core.NewEmptyString()
 
 	return i
 }

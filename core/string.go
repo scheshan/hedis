@@ -20,9 +20,20 @@ func (t *String) AppendStr(str *String) {
 	t.Append(str.buf)
 }
 
-func NewString() *String {
+func (t *String) String() string {
+	return string(t.buf)
+}
+
+func NewEmptyString() *String {
 	str := &String{}
 	str.buf = make([]byte, 16, 16)
+
+	return str
+}
+
+func NewString(size int) *String {
+	str := &String{}
+	str.buf = make([]byte, size, size)
 
 	return str
 }
