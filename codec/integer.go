@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"bufio"
 	"hedis/core"
 	"strconv"
 )
@@ -14,23 +15,24 @@ func (t *Integer) String() string {
 	return ""
 }
 
-func (t *Integer) Read(data []byte) (int, bool, error) {
-	reads := ReadCRLF(data)
-	if reads == 0 {
-		t.str.Append(data)
-		return reads, false, nil
-	}
+func (t *Integer) Value() int {
+	return t.num
+}
 
-	t.str.Append(data[0:reads])
-
-	var err error
-	t.num, err = strconv.Atoi(t.str.String())
-
+func (t *Integer) Read(reader *bufio.Reader) (bool, error) {
+	line, prefix, err := reader.ReadLine()
 	if err != nil {
-		return reads + 2, false, err
+		return false, err
 	}
 
-	return reads + 2, true, err
+	t.str.Append(line)
+
+	if prefix {
+		return false, nil
+	}
+
+	t.num, err = strconv.Atoi(t.str.String())
+	return err != nil, err
 }
 
 func NewInteger() *Integer {

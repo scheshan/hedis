@@ -1,5 +1,7 @@
 package codec
 
+import "bufio"
+
 type Array struct {
 	messages []Message
 }
@@ -8,8 +10,8 @@ func (t *Array) String() string {
 	return ""
 }
 
-func (t *Array) Read(data []byte) (int, bool, error) {
-	return 0, true, nil
+func (t *Array) Read(reader *bufio.Reader) (bool, error) {
+	return true, nil
 }
 
 func NewArray() *Array {

@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"bufio"
 	"hedis/core"
 	"strconv"
 )
@@ -12,7 +13,7 @@ const (
 
 type Bulk struct {
 	state  int
-	length int
+	length *Integer
 	str    *core.String
 }
 
@@ -22,6 +23,30 @@ func (t *Bulk) String() string {
 	}
 
 	return t.str.String()
+}
+
+func (t *Bulk) Read(reader *bufio.Reader) (bool, error) {
+	if t.state == bulkStateReadLength {
+		finish, err := t.length.Read(reader)
+		if err != nil {
+			return false, err
+		}
+
+		if !finish {
+			return false, nil
+		}
+
+		t.state = bulkStateReadString
+		size := t.length.num
+		if size < 0 {
+			size = 0
+		}
+		t.str = core.NewString(size)
+
+		return false, nil
+	}
+
+	reader.read
 }
 
 func (t *Bulk) Read(data []byte) (int, bool, error) {
@@ -72,7 +97,7 @@ func (t *Bulk) Read(data []byte) (int, bool, error) {
 func NewBulk() *Bulk {
 	b := &Bulk{}
 	b.state = bulkStateReadLength
-	b.str = core.NewMinimalString()
+	b.length = NewInteger()
 
 	return b
 }

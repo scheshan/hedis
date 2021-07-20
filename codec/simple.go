@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"bufio"
 	"hedis/core"
 )
 
@@ -19,14 +20,12 @@ func (t *Simple) String() string {
 	return t.str.String()
 }
 
-func (t *Simple) Read(data []byte) (int, bool, error) {
-	reads := ReadCRLF(data)
-
-	if reads == 0 {
-		t.str.Append(data)
-		return len(data), false, nil
+func (t *Simple) Read(reader *bufio.Reader) (bool, error) {
+	line, prefix, err := reader.ReadLine()
+	if err != nil {
+		return false, err
 	}
 
-	t.str.Append(data[0:reads])
-	return reads + 2, true, nil
+	t.str.Append(line)
+	return !prefix, nil
 }

@@ -9,7 +9,7 @@ var InvalidMessage = errors.New("invalid message")
 
 type Message interface {
 	String() string
-	Read(data []byte) (int, bool, error)
+	Read(reader *bufio.Reader) (bool, error)
 }
 
 func ReadMessage(reader *bufio.Reader) (Message, error) {
