@@ -10,8 +10,8 @@ func (t *Array) String() string {
 	return ""
 }
 
-func (t *Array) Read(reader *bufio.Reader) (bool, error) {
-	return true, nil
+func (t *Array) Read(reader *bufio.Reader) error {
+	return nil
 }
 
 func NewArray() *Array {
