@@ -1,7 +1,8 @@
 package core
 
 type String struct {
-	buf []byte
+	hash int
+	buf  []byte
 }
 
 func (t *String) Clear() {
@@ -34,6 +35,31 @@ func (t *String) String() string {
 
 func (t *String) Bytes() []byte {
 	return t.buf
+}
+
+func (t *String) HashCode() int {
+	h := t.hash
+	if h == 0 && t.Len() > 0 {
+		for _, b := range t.buf {
+			h = 31*h + int(b)
+		}
+	}
+
+	return h
+}
+
+func (t *String) Equal(o *String) bool {
+	if t.Len() == o.Len() {
+		for i := 0; i < t.Len(); i++ {
+			if t.buf[i] != o.buf[i] {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	return false
 }
 
 func NewEmptyString() *String {
