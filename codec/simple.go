@@ -6,7 +6,7 @@ import (
 )
 
 type Simple struct {
-	str *core.String
+	*oneLineMessage
 }
 
 func NewSimple() *Simple {

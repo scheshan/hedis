@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"hedis/core"
 )
 
 var InvalidMessage = errors.New("invalid message")
@@ -12,6 +13,10 @@ type Message interface {
 	String() string
 	Read(reader *bufio.Reader) error
 	Write(writer *bufio.Writer) error
+}
+
+type oneLineMessage struct {
+	str *core.String
 }
 
 func ReadMessage(reader *bufio.Reader) (Message, error) {

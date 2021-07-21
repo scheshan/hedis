@@ -35,8 +35,10 @@ func NewSession(id int, conn *net.TCPConn, list *SessionList) *Session {
 }
 
 func (t *Session) ReadLoop() {
+	decoder := &codec.Decoder{}
+
 	for {
-		msg, err := codec.ReadMessage(t.reader)
+		msg, err := decoder.Decode(t.reader)
 		if err != nil {
 			t.handleError(err)
 			return

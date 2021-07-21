@@ -20,6 +20,10 @@ func (t *String) Append(data []byte) {
 	t.buf = append(t.buf, data...)
 }
 
+func (t *String) AppendByte(b byte) {
+	t.buf = append(t.buf, b)
+}
+
 func (t *String) AppendStr(str *String) {
 	t.Append(str.buf)
 }
