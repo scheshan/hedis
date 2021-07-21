@@ -6,6 +6,8 @@ import (
 	"hedis/core"
 )
 
+var decoder = &Decoder{}
+
 type Decoder struct {
 }
 
@@ -71,12 +73,16 @@ func (t *Decoder) readMessage(reader *bufio.Reader) (Message, error) {
 func (t *Decoder) readLine(reader *bufio.Reader) (*core.String, error) {
 	str := core.NewEmptyString()
 
-	for line, prefix, err := reader.ReadLine(); prefix; {
+	finish := false
+
+	for !finish {
+		line, prefix, err := reader.ReadLine()
 		if err != nil {
 			return nil, err
 		}
 
 		str.Append(line)
+		finish = !prefix
 	}
 
 	return str, nil
@@ -170,7 +176,7 @@ func (t *Decoder) readBulk(reader *bufio.Reader) (*core.String, error) {
 			_, _ = reader.Discard(len(peek))
 		}
 
-		if err = readCRLF(reader); err != nil {
+		if err = t.readCRLF(reader); err != nil {
 			return nil, err
 		}
 	}
@@ -201,10 +207,6 @@ func (t *Decoder) readArray(reader *bufio.Reader) (*Array, error) {
 			return nil, err
 		}
 
-		if err = msg.Read(reader); err != nil {
-			return nil, err
-		}
-
 		arr.messages = append(arr.messages, msg)
 		num--
 
@@ -218,7 +220,10 @@ func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
 	arg := core.NewEmptyString()
 	inline.args = append(inline.args, arg)
 
-	for line, prefix, err := reader.ReadLine(); prefix; {
+	finish := false
+
+	for !finish {
+		line, prefix, err := reader.ReadLine()
 		if err != nil {
 			return nil, err
 		}
@@ -231,6 +236,7 @@ func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
 				arg.AppendByte(line[i])
 			}
 		}
+		finish = !prefix
 	}
 
 	return inline, nil

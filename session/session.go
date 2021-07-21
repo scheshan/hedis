@@ -35,23 +35,29 @@ func NewSession(id int, conn *net.TCPConn, list *SessionList) *Session {
 }
 
 func (t *Session) ReadLoop() {
-	decoder := &codec.Decoder{}
-
 	for {
-		msg, err := decoder.Decode(t.reader)
+		msg, err := codec.Decode(t.reader)
 		if err != nil {
 			t.handleError(err)
 			return
 		}
 
-		if err = msg.Read(t.reader); err != nil {
+		str, err := codec.EncodeString(msg)
+		if err != nil {
 			t.handleError(err)
 			return
 		}
 
-		log.Print(msg.String())
-		codec.NewSimpleStr("hello").Write(t.writer)
-		t.writer.Flush()
+		log.Print(str)
+
+		if err := codec.Encode(t.writer, codec.NewSimpleString("hello")); err != nil {
+			t.handleError(err)
+			return
+		}
+		if err := t.writer.Flush(); err != nil {
+			t.handleError(err)
+			return
+		}
 	}
 }
 

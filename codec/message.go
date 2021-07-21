@@ -5,135 +5,158 @@ import (
 	"bytes"
 	"errors"
 	"hedis/core"
+	"strconv"
 )
 
 var InvalidMessage = errors.New("invalid message")
 
 type Message interface {
-	String() string
-	Read(reader *bufio.Reader) error
-	Write(writer *bufio.Writer) error
+	Command() *core.String
+	Args() []*core.String
+	ToString() *core.String
 }
 
-type oneLineMessage struct {
+type Simple struct {
 	str *core.String
 }
 
-func ReadMessage(reader *bufio.Reader) (Message, error) {
-	b, err := reader.ReadByte()
-	if err != nil {
-		return nil, err
-	}
-
-	switch b {
-	case '+':
-		return NewSimple(), nil
-	case '-':
-		return NewError(), nil
-	case ':':
-		return NewInteger(), nil
-	case '$':
-		return NewBulk(), nil
-	case '*':
-		return NewArray(), nil
-	}
-
-	return nil, InvalidMessage
+func (t *Simple) Command() *core.String {
+	return t.str
 }
 
-func readSymbol(reader *bufio.Reader) (num int, negative bool, err error) {
-	num = 0
-	negative = false
-	var b byte
-
-	b, err = reader.ReadByte()
-	if err != nil {
-		return
-	}
-
-	if b == '-' {
-		negative = true
-	} else if b >= '0' && b <= '9' {
-		num = int(b - '0')
-	} else {
-		err = InvalidMessage
-	}
-
-	return
+func (t *Simple) Args() []*core.String {
+	return nil
 }
 
-func readCRLF(reader *bufio.Reader) error {
-	b, err := reader.ReadByte()
-	if err != nil {
-		return err
-	}
-	if b != '\r' {
-		return err
-	}
-
-	return readLF(reader)
+func (t *Simple) ToString() *core.String {
+	return t.str
 }
 
-func readLF(reader *bufio.Reader) error {
-	b, err := reader.ReadByte()
-	if err != nil {
-		return err
+type Integer struct {
+	num int
+}
+
+func (t *Integer) Command() *core.String {
+	return nil
+}
+
+func (t *Integer) Args() []*core.String {
+	return nil
+}
+
+func (t *Integer) ToString() *core.String {
+	return core.NewStringStr(strconv.Itoa(t.num))
+}
+
+type Error struct {
+	str *core.String
+}
+
+func (t *Error) Command() *core.String {
+	return nil
+}
+
+func (t *Error) Args() []*core.String {
+	return nil
+}
+
+func (t *Error) ToString() *core.String {
+	return t.str
+}
+
+type Bulk struct {
+	str *core.String
+}
+
+func (t *Bulk) Command() *core.String {
+	return t.str
+}
+
+func (t *Bulk) Args() []*core.String {
+	return nil
+}
+
+func (t *Bulk) ToString() *core.String {
+	return t.str
+}
+
+type Array struct {
+	messages []Message
+}
+
+func (t *Array) Command() *core.String {
+	if len(t.messages) == 0 {
+		return nil
 	}
-	if b != '\n' {
-		return InvalidMessage
+
+	msg, ok := t.messages[0].(*Bulk)
+	if !ok {
+		return nil
+	}
+
+	return msg.str
+}
+
+func (t *Array) Args() []*core.String {
+	args := make([]*core.String, 0, len(t.messages)-1)
+
+	for i := 1; i < len(t.messages); i++ {
+		args[i-1] = t.messages[i].ToString()
+	}
+
+	return args
+}
+
+func (t *Array) ToString() *core.String {
+	return nil
+}
+
+type Inline struct {
+	args []*core.String
+}
+
+func (t *Inline) Command() *core.String {
+	if len(t.args) > 0 {
+		return t.args[0]
 	}
 
 	return nil
 }
 
-func readInteger(reader *bufio.Reader) (res int, err error) {
-	num, negative, err := readSymbol(reader)
-	if err != nil {
-		return 0, err
-	}
-
-	for {
-		b, err := reader.ReadByte()
-		if err != nil {
-			return num, err
-		}
-
-		if b >= '0' && b <= '9' {
-			num = num*10 + int(b-'0')
-		} else if b == '\r' {
-			if err = readLF(reader); err != nil {
-				return 0, err
-			}
-
-			res = num
-			if negative {
-				res = -res
-			}
-			return res, nil
-		} else {
-			return 0, InvalidMessage
-		}
-	}
+func (t *Inline) Args() []*core.String {
+	return t.args[1:]
 }
 
-func toString(message Message) string {
-	buf := bytes.NewBuffer(make([]byte, 1024))
-	writer := bufio.NewWriter(buf)
-
-	err := message.Write(writer)
-	if err != nil {
-		return err.Error()
-	}
-
-	if err = writer.Flush(); err != nil {
-		return err.Error()
-	}
-
-	return buf.String()
+func (t *Inline) ToString() *core.String {
+	return nil
 }
 
-func writeCRLF(writer *bufio.Writer) error {
-	_, err := writer.WriteString("\r\n")
+func Decode(reader *bufio.Reader) (Message, error) {
+	return decoder.Decode(reader)
+}
 
-	return err
+func Encode(writer *bufio.Writer, message Message) error {
+	return encoder.Encode(writer, message)
+}
+
+func EncodeString(message Message) (string, error) {
+	buffer := bytes.NewBuffer(make([]byte, 0, 1024))
+	writer := bufio.NewWriter(buffer)
+
+	if err := Encode(writer, message); err != nil {
+		return "", err
+	}
+
+	if err := writer.Flush(); err != nil {
+		return "", err
+	}
+
+	return buffer.String(), nil
+}
+
+func NewSimpleString(text string) *Simple {
+	res := &Simple{}
+	res.str = core.NewStringStr(text)
+
+	return res
 }

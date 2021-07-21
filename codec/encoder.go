@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var encoder = &Encoder{}
+
 type Encoder struct {
 }
 
@@ -20,10 +22,12 @@ func (t *Encoder) Encode(writer *bufio.Writer, message Message) error {
 		return t.encodeInteger(writer, msg)
 	} else if msg, ok := message.(*Bulk); ok {
 		return t.encodeBulk(writer, msg)
-	} else if _, ok := message.(*Array); ok {
-		_, err = writer.WriteString("*")
+	} else if msg, ok := message.(*Array); ok {
+		return t.encodeArray(writer, msg)
+	} else if msg, ok := message.(*Inline); ok {
+		return t.encodeInline(writer, msg)
 	} else {
-		err = errors.New("message not supported")
+		return errors.New("message not supported")
 	}
 
 	return err
@@ -63,6 +67,41 @@ func (t *Encoder) encodeBulk(writer *bufio.Writer, msg *Bulk) error {
 
 	if _, err := writer.Write(msg.str.Bytes()); err != nil {
 		return err
+	}
+
+	return t.encodeCRLF(writer)
+}
+
+func (t *Encoder) encodeArray(writer *bufio.Writer, msg *Array) error {
+	_, err := writer.WriteString("*")
+	if err != nil {
+		return err
+	}
+
+	if err = t.encodeNumber(writer, len(msg.messages)); err != nil {
+		return err
+	}
+
+	for _, m := range msg.messages {
+		if err = t.Encode(writer, m); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t *Encoder) encodeInline(writer *bufio.Writer, msg *Inline) error {
+	for i, m := range msg.args {
+		if i > 0 {
+			if _, err := writer.WriteString(" "); err != nil {
+				return err
+			}
+		}
+
+		if _, err := writer.Write(m.Bytes()); err != nil {
+			return err
+		}
 	}
 
 	return t.encodeCRLF(writer)
