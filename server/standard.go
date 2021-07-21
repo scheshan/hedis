@@ -50,8 +50,9 @@ func (t *StandardServer) accept() {
 		}
 
 		t.clientId++
-		session := session.NewSession(t.clientId, conn.(*net.TCPConn))
+		session := session.NewSession(t.clientId, conn.(*net.TCPConn), t.sessions)
 		t.sessions.AddLast(session)
+		go session.ReadLoop()
 	}
 }
 

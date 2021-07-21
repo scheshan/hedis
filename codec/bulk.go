@@ -46,7 +46,8 @@ func (t *Bulk) Read(reader *bufio.Reader) error {
 		_, _ = reader.Discard(len(peek))
 	}
 
-	return nil
+	err = readCRLF(reader)
+	return err
 }
 
 func NewBulk() *Bulk {

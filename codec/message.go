@@ -46,7 +46,7 @@ func readSymbol(reader *bufio.Reader) (num int, negative bool, err error) {
 
 	if b == '-' {
 		negative = true
-	} else if b > '0' || b < '9' {
+	} else if b >= '0' && b <= '9' {
 		num = int(b - '0')
 	} else {
 		err = InvalidMessage
@@ -88,10 +88,10 @@ func ReadInteger(reader *bufio.Reader) (res int, err error) {
 	for {
 		b, err := reader.ReadByte()
 		if err != nil {
-			return
+			return num, err
 		}
 
-		if b > '0' || b < '9' {
+		if b >= '0' && b <= '9' {
 			num = num*10 + int(b-'0')
 		} else if b == '\r' {
 			if err = readLF(reader); err != nil {
@@ -102,7 +102,7 @@ func ReadInteger(reader *bufio.Reader) (res int, err error) {
 			if negative {
 				res = -res
 			}
-			return
+			return res, nil
 		} else {
 			return 0, InvalidMessage
 		}

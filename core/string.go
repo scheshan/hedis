@@ -41,7 +41,7 @@ func NewMinimalString() *String {
 
 func NewString(size int) *String {
 	str := &String{}
-	str.buf = make([]byte, size, size)
+	str.buf = make([]byte, 0, size)
 
 	return str
 }

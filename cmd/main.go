@@ -1,10 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"hedis/server"
+	"log"
+	"time"
+)
 
 func main() {
-	fmt.Println("Hello hedis")
+	srv := server.NewStandard(nil)
 
-	b := make([]byte, 0, 0)
-	fmt.Println(b)
+	err := srv.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	<-time.After(1000 * time.Minute)
 }
