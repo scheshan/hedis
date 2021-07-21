@@ -3,6 +3,7 @@ package codec
 import (
 	"bufio"
 	"hedis/core"
+	"strconv"
 )
 
 type Bulk struct {
@@ -11,11 +12,11 @@ type Bulk struct {
 }
 
 func (t *Bulk) String() string {
-	return t.str.String()
+	return toString(t)
 }
 
 func (t *Bulk) Read(reader *bufio.Reader) error {
-	num, err := ReadInteger(reader)
+	num, err := readInteger(reader)
 	if err != nil {
 		return err
 	}
@@ -48,6 +49,28 @@ func (t *Bulk) Read(reader *bufio.Reader) error {
 
 	err = readCRLF(reader)
 	return err
+}
+
+func (t *Bulk) Write(writer *bufio.Writer) (err error) {
+	if _, err = writer.WriteString("$"); err != nil {
+		return err
+	}
+	if _, err = writer.WriteString(strconv.Itoa(t.length)); err != nil {
+		return err
+	}
+	if err = writeCRLF(writer); err != nil {
+		return err
+	}
+
+	if t.length >= 0 {
+		if _, err = writer.Write(t.str.Bytes()); err != nil {
+			return err
+		}
+
+		return writeCRLF(writer)
+	}
+
+	return nil
 }
 
 func NewBulk() *Bulk {

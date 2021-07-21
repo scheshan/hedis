@@ -10,7 +10,7 @@ type Integer struct {
 }
 
 func (t *Integer) String() string {
-	return strconv.Itoa(t.num)
+	return toString(t)
 }
 
 func (t *Integer) Value() int {
@@ -18,13 +18,23 @@ func (t *Integer) Value() int {
 }
 
 func (t *Integer) Read(reader *bufio.Reader) error {
-	num, err := ReadInteger(reader)
+	num, err := readInteger(reader)
 	if err != nil {
 		return err
 	}
 
 	t.num = num
 	return nil
+}
+
+func (t *Integer) Write(writer *bufio.Writer) (err error) {
+	if _, err = writer.WriteString(":"); err != nil {
+		return err
+	}
+	if _, err = writer.WriteString(strconv.Itoa(t.num)); err != nil {
+		return err
+	}
+	return writeCRLF(writer)
 }
 
 func NewInteger() *Integer {

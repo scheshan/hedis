@@ -28,6 +28,10 @@ func (t *String) String() string {
 	return string(t.buf)
 }
 
+func (t *String) Bytes() []byte {
+	return t.buf
+}
+
 func NewEmptyString() *String {
 	str := &String{}
 	str.buf = make([]byte, 0, 0)

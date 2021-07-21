@@ -1,6 +1,9 @@
 package codec
 
-import "bufio"
+import (
+	"bufio"
+	"strconv"
+)
 
 type Array struct {
 	length   int
@@ -8,17 +11,17 @@ type Array struct {
 }
 
 func (t *Array) String() string {
-	return ""
+	return toString(t)
 }
 
 func (t *Array) Read(reader *bufio.Reader) error {
-	num, err := ReadInteger(reader)
+	num, err := readInteger(reader)
 	if err != nil {
 		return err
 	}
 
 	t.length = num
-	t.messages = make([]Message, t.length, t.length)
+	t.messages = make([]Message, 0, t.length)
 
 	if t.length == 0 {
 		return nil
@@ -37,6 +40,26 @@ func (t *Array) Read(reader *bufio.Reader) error {
 
 		t.messages = append(t.messages, msg)
 		ind++
+	}
+
+	return nil
+}
+
+func (t *Array) Write(writer *bufio.Writer) (err error) {
+	if _, err = writer.WriteString("*"); err != nil {
+		return err
+	}
+	if _, err = writer.WriteString(strconv.Itoa(t.length)); err != nil {
+		return err
+	}
+	if _, err = writer.WriteString("\r\n"); err != nil {
+		return err
+	}
+
+	for _, message := range t.messages {
+		if err = message.Write(writer); err != nil {
+			return err
+		}
 	}
 
 	return nil

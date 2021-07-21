@@ -2,14 +2,15 @@ package session
 
 import (
 	"bufio"
-	"fmt"
 	"hedis/codec"
+	"io"
 	"log"
 	"net"
 )
 
 type Session struct {
 	id      int
+	state   State
 	conn    *net.TCPConn
 	pre     *Session
 	next    *Session
@@ -28,6 +29,8 @@ func NewSession(id int, conn *net.TCPConn, list *SessionList) *Session {
 	s.writer = bufio.NewWriter(conn)
 	s.list = list
 
+	log.Printf("新连接建立: %v\r\n", conn.RemoteAddr())
+
 	return s
 }
 
@@ -44,15 +47,17 @@ func (t *Session) ReadLoop() {
 			return
 		}
 
-		fmt.Println("命令可以执行了")
-		fmt.Println(msg.String())
+		log.Printf("命令可以执行了\r\n")
+		log.Print(msg.String())
 	}
 }
 
 func (t *Session) handleError(err error) {
-	log.Print(err)
+	if err != io.EOF {
+		log.Print(err)
+		_ = t.conn.Close()
+	}
 	t.list.Remove(t)
-	_ = t.conn.Close()
 }
 
 func (t *Session) Write(msg codec.Message) error {

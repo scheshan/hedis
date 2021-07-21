@@ -2,6 +2,7 @@ package codec
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 )
 
@@ -10,6 +11,7 @@ var InvalidMessage = errors.New("invalid message")
 type Message interface {
 	String() string
 	Read(reader *bufio.Reader) error
+	Write(writer *bufio.Writer) error
 }
 
 func ReadMessage(reader *bufio.Reader) (Message, error) {
@@ -79,7 +81,7 @@ func readLF(reader *bufio.Reader) error {
 	return nil
 }
 
-func ReadInteger(reader *bufio.Reader) (res int, err error) {
+func readInteger(reader *bufio.Reader) (res int, err error) {
 	num, negative, err := readSymbol(reader)
 	if err != nil {
 		return 0, err
@@ -107,4 +109,26 @@ func ReadInteger(reader *bufio.Reader) (res int, err error) {
 			return 0, InvalidMessage
 		}
 	}
+}
+
+func toString(message Message) string {
+	buf := bytes.NewBuffer(make([]byte, 1024))
+	writer := bufio.NewWriter(buf)
+
+	err := message.Write(writer)
+	if err != nil {
+		return err.Error()
+	}
+
+	if err = writer.Flush(); err != nil {
+		return err.Error()
+	}
+
+	return buf.String()
+}
+
+func writeCRLF(writer *bufio.Writer) error {
+	_, err := writer.WriteString("\r\n")
+
+	return err
 }

@@ -17,7 +17,7 @@ func NewSimple() *Simple {
 }
 
 func (t *Simple) String() string {
-	return t.str.String()
+	return toString(t)
 }
 
 func (t *Simple) Read(reader *bufio.Reader) error {
@@ -33,4 +33,15 @@ func (t *Simple) Read(reader *bufio.Reader) error {
 	}
 
 	return nil
+}
+
+func (t *Simple) Write(writer *bufio.Writer) (err error) {
+	if _, err = writer.WriteString("+"); err != nil {
+		return err
+	}
+	if _, err = writer.Write(t.str.Bytes()); err != nil {
+		return err
+	}
+
+	return writeCRLF(writer)
 }
