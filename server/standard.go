@@ -1,24 +1,21 @@
 package server
 
 import (
-	"hedis/config"
-	"hedis/session"
 	"log"
 	"net"
 )
 
 type StandardServer struct {
-	config   *config.Config
+	config   *ServerConfig
 	listener net.Listener
-	sessions *session.SessionList
+	session  *Session
 	running  bool
 	clientId int
 }
 
-func NewStandard(c *config.Config) Server {
+func NewStandard(c *ServerConfig) Server {
 	server := &StandardServer{}
 	server.config = c
-	server.sessions = session.NewSessionList()
 
 	return server
 }
@@ -50,10 +47,34 @@ func (t *StandardServer) accept() {
 		}
 
 		t.clientId++
-		session := session.NewSession(t.clientId, conn.(*net.TCPConn), t.sessions)
-		t.sessions.AddLast(session)
-		go session.ReadLoop()
+		s := NewSession(t.clientId, conn.(*net.TCPConn), t)
+		s.SetCloseFunc(t.onSessionClose)
+
+		s.SetNext(t.session)
+		if t.session != nil {
+			t.session.SetPre(s)
+		}
+		t.session = s
+
+		go s.ReadLoop()
 	}
+}
+
+func (t *StandardServer) onSessionClose(s *Session) {
+	if s.Pre() != nil {
+		s.Pre().SetNext(s.Next())
+	}
+
+	if s.Next() != nil {
+		s.Next().SetPre(s.Pre())
+	}
+
+	if s == t.session {
+		t.session = t.session.Next()
+	}
+
+	s.SetPre(nil)
+	s.SetNext(nil)
 }
 
 func (t *StandardServer) Stop() error {
