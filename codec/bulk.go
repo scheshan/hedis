@@ -46,7 +46,6 @@ func (t *Bulk) Read(reader *bufio.Reader) (bool, error) {
 		return false, nil
 	}
 
-	reader.read
 }
 
 func (t *Bulk) Read(data []byte) (int, bool, error) {

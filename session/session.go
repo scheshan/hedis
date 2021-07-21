@@ -41,44 +41,23 @@ func (t *Session) ReadLoop() {
 			continue
 		}
 
+		finish, err := t.message.Read(t.reader)
+		if err != nil {
+			t.handleError(err)
+			return
+		}
+
+		if finish {
+			//TODO process command
+
+			t.message = nil
+		}
 	}
 }
 
 func (t *Session) handleError(err error) {
 	t.list.Remove(t)
-}
-
-func (t *Session) ReadData() error {
-	ind := 0
-
-	for ind < bytes {
-		data := t.buffer[ind:bytes]
-
-		if t.state == nil {
-			message, err := codec.ReadMessage(data)
-			if err != nil {
-				return err
-			}
-
-			t.state = message
-			ind++
-			continue
-		}
-
-		read, complete, err := t.state.Read(data)
-		if err != nil {
-			return err
-		}
-
-		ind += read
-		if complete {
-			//TODO send command
-
-			t.state = nil
-		}
-	}
-
-	return nil
+	_ = t.conn.Close()
 }
 
 func (t *Session) Write(msg codec.Message) error {
