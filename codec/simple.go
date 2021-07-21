@@ -16,6 +16,13 @@ func NewSimple() *Simple {
 	return s
 }
 
+func NewSimpleStr(str string) *Simple {
+	s := &Simple{}
+	s.str = core.NewStringStr(str)
+
+	return s
+}
+
 func (t *Simple) String() string {
 	return toString(t)
 }

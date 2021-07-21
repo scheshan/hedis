@@ -47,8 +47,9 @@ func (t *Session) ReadLoop() {
 			return
 		}
 
-		log.Printf("命令可以执行了\r\n")
 		log.Print(msg.String())
+		codec.NewSimpleStr("hello").Write(t.writer)
+		t.writer.Flush()
 	}
 }
 

@@ -49,3 +49,10 @@ func NewString(size int) *String {
 
 	return str
 }
+
+func NewStringStr(str string) *String {
+	s := &String{}
+	s.buf = []byte(str)
+
+	return s
+}
