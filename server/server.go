@@ -1,6 +1,87 @@
 package server
 
+import (
+	"log"
+	"net"
+)
+
 type Server interface {
 	Run() error
 	Stop() error
+}
+
+type StandardServer struct {
+	config   *ServerConfig
+	listener net.Listener
+	session  *Session
+	running  bool
+	clientId int
+}
+
+func NewStandard(c *ServerConfig) Server {
+	server := &StandardServer{}
+	server.config = c
+
+	return server
+}
+
+func (t *StandardServer) Run() error {
+	addr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:6379")
+	if err != nil {
+		return err
+	}
+
+	var listener net.Listener
+	listener, err = net.ListenTCP("tcp", addr)
+	if err != nil {
+		return err
+	}
+	t.listener = listener
+
+	t.running = true
+
+	go t.accept()
+	return nil
+}
+
+func (t *StandardServer) accept() {
+	for t.running {
+		conn, err := t.listener.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		t.clientId++
+		s := NewSession(t.clientId, conn.(*net.TCPConn), t)
+		s.SetCloseFunc(t.onSessionClose)
+
+		s.SetNext(t.session)
+		if t.session != nil {
+			t.session.SetPre(s)
+		}
+		t.session = s
+
+		go s.ReadLoop()
+	}
+}
+
+func (t *StandardServer) onSessionClose(s *Session) {
+	if s.Pre() != nil {
+		s.Pre().SetNext(s.Next())
+	}
+
+	if s.Next() != nil {
+		s.Next().SetPre(s.Pre())
+	}
+
+	if s == t.session {
+		t.session = t.session.Next()
+	}
+
+	s.SetPre(nil)
+	s.SetNext(nil)
+}
+
+func (t *StandardServer) Stop() error {
+	panic("implement me")
 }
