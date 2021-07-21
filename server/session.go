@@ -127,14 +127,7 @@ func (t *Session) ReadLoop() {
 
 		log.Print(str)
 
-		if err := codec.Encode(t.writer, codec.NewSimpleString("hello")); err != nil {
-			t.handleError(err)
-			return
-		}
-		if err := t.writer.Flush(); err != nil {
-			t.handleError(err)
-			return
-		}
+		t.Write(codec.NewSimpleString("hello"))
 	}
 }
 
@@ -145,8 +138,16 @@ func (t *Session) handleError(err error) {
 	}
 }
 
-func (t *Session) Write(msg codec.Message) error {
-	return nil
+func (t *Session) Write(msg codec.Message) {
+	if err := codec.Encode(t.writer, msg); err != nil {
+		t.handleError(err)
+		return
+	}
+
+	if err := t.writer.Flush(); err != nil {
+		t.handleError(err)
+		return
+	}
 }
 
 func (t *Session) Close() error {
