@@ -25,6 +25,14 @@ func CommandPing(s *Session, args []*core.String) codec.Message {
 	return msg
 }
 
+func CommandQuit(s *Session, args []*core.String) codec.Message {
+	msg := codec.NewSimpleString("ok")
+	s.Write(msg)
+	s.Close()
+
+	return nil
+}
+
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
 
@@ -64,6 +72,7 @@ func newAllCommands() *AllCommands {
 	commands := &AllCommands{}
 	commands.cmMap = core.NewHashSize(1024)
 	commands.add("ping", CommandPing)
+	commands.add("quit", CommandQuit)
 
 	return commands
 }

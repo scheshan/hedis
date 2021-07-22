@@ -55,7 +55,10 @@ func (t *StandardServer) processRequest() {
 		ctx := <-t.requests
 
 		msg := ctx.command(ctx.session, ctx.args)
-		ctx.session.QueueMessage(msg)
+
+		if msg != nil {
+			ctx.session.QueueMessage(msg)
+		}
 	}
 }
 
