@@ -13,6 +13,7 @@ type Server interface {
 }
 
 type StandardServer struct {
+	cm       *Commands
 	config   *ServerConfig
 	listener net.Listener
 	session  *Session
@@ -25,8 +26,17 @@ func NewStandard(c *ServerConfig) Server {
 	server := &StandardServer{}
 	server.config = c
 	server.requests = make(chan *CommandContext, 102400)
+	server.initCommands()
 
 	return server
+}
+
+func (t *StandardServer) initCommands() {
+	cm := NewCommands()
+	cm.add("ping", CommandPing)
+	cm.add("quit", CommandQuit)
+
+	t.cm = cm
 }
 
 func (t *StandardServer) accept() {
@@ -108,7 +118,7 @@ func (t *StandardServer) QueueCommand(session *Session, name *core.String, args 
 	ctx.session = session
 	ctx.name = name
 	ctx.args = args
-	ctx.command = commands.Get(ctx.name)
+	ctx.command = t.cm.Get(ctx.name)
 
 	t.requests <- ctx
 }

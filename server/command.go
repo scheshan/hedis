@@ -45,11 +45,11 @@ func CommandParseFailed(s *Session, args []*core.String) codec.Message {
 	return msg
 }
 
-type AllCommands struct {
+type Commands struct {
 	cmMap *core.Hash
 }
 
-func (t *AllCommands) Get(name *core.String) Command {
+func (t *Commands) Get(name *core.String) Command {
 	find, i := t.cmMap.Get(name)
 
 	if !find {
@@ -64,17 +64,13 @@ func (t *AllCommands) Get(name *core.String) Command {
 	return cmd
 }
 
-func (t *AllCommands) add(name string, cmd Command) {
+func (t *Commands) add(name string, cmd Command) {
 	t.cmMap.Put(core.NewStringStr(name), cmd)
 }
 
-func newAllCommands() *AllCommands {
-	commands := &AllCommands{}
-	commands.cmMap = core.NewHashSize(1024)
-	commands.add("ping", CommandPing)
-	commands.add("quit", CommandQuit)
+func NewCommands() *Commands {
+	cm := &Commands{}
+	cm.cmMap = core.NewHashSize(100)
 
-	return commands
+	return cm
 }
-
-var commands = newAllCommands()
