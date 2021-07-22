@@ -160,3 +160,17 @@ func NewSimpleString(text string) *Simple {
 
 	return res
 }
+
+func NewSimpleStr(str *core.String) *Simple {
+	res := &Simple{}
+	res.str = str
+
+	return res
+}
+
+func NewErrorString(text string) *Error {
+	res := &Error{}
+	res.str = core.NewStringStr(text)
+
+	return res
+}

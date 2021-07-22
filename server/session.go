@@ -6,18 +6,10 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 type SessionCloseFunc func(s *Session)
-
-type SessionState int
-
-const (
-	StateNonAuth SessionState = iota
-	StateOpen
-	StateError
-	StateClosed
-)
 
 type Session struct {
 	id        int
@@ -29,8 +21,10 @@ type Session struct {
 	next      *Session
 	reader    *bufio.Reader
 	writer    *bufio.Writer
-	state     SessionState
+	state     int
 	closeFunc SessionCloseFunc
+	messages  chan codec.Message
+	running   bool
 }
 
 func (t *Session) Id() int {
@@ -81,11 +75,11 @@ func (t *Session) Writer() *bufio.Writer {
 	return t.writer
 }
 
-func (t *Session) State() SessionState {
+func (t *Session) State() int {
 	return t.state
 }
 
-func (t *Session) SetState(state SessionState) {
+func (t *Session) SetState(state int) {
 	t.state = state
 }
 
@@ -105,13 +99,32 @@ func NewSession(id int, conn *net.TCPConn, server Server) *Session {
 	s.reader = bufio.NewReader(conn)
 	s.writer = bufio.NewWriter(conn)
 	s.server = server
+	s.messages = make(chan codec.Message, 1024)
 
 	log.Printf("新连接建立: %v\r\n", conn.RemoteAddr())
 
 	return s
 }
 
-func (t *Session) ReadLoop() {
+func (t *Session) handleError(err error) {
+	if err != io.EOF {
+		log.Print(err)
+		_ = t.Close()
+	}
+}
+
+func (t *Session) processResponse() {
+	for {
+		select {
+		case msg := <-t.messages:
+			t.Write(msg)
+		case <-time.After(20 * time.Second):
+			continue
+		}
+	}
+}
+
+func (t *Session) processRequest() {
 	for {
 		msg, err := codec.Decode(t.reader)
 		if err != nil {
@@ -119,22 +132,7 @@ func (t *Session) ReadLoop() {
 			return
 		}
 
-		str, err := codec.EncodeString(msg)
-		if err != nil {
-			t.handleError(err)
-			return
-		}
-
-		log.Print(str)
-
-		t.Write(codec.NewSimpleString("hello"))
-	}
-}
-
-func (t *Session) handleError(err error) {
-	if err != io.EOF {
-		log.Print(err)
-		_ = t.Close()
+		t.server.QueueCommand(t, msg.Command(), msg.Args())
 	}
 }
 
@@ -150,7 +148,20 @@ func (t *Session) Write(msg codec.Message) {
 	}
 }
 
+func (t *Session) StartLoop() {
+	t.running = true
+
+	go t.processRequest()
+	go t.processResponse()
+}
+
+func (t *Session) QueueMessage(msg codec.Message) {
+	t.messages <- msg
+}
+
 func (t *Session) Close() error {
+	t.running = false
+
 	err := t.conn.Close()
 
 	if t.closeFunc != nil {

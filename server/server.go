@@ -1,6 +1,7 @@
 package server
 
 import (
+	"hedis/core"
 	"log"
 	"net"
 )
@@ -8,6 +9,7 @@ import (
 type Server interface {
 	Run() error
 	Stop() error
+	QueueCommand(session *Session, name *core.String, args []*core.String)
 }
 
 type StandardServer struct {
@@ -16,32 +18,15 @@ type StandardServer struct {
 	session  *Session
 	running  bool
 	clientId int
+	requests chan *CommandContext
 }
 
 func NewStandard(c *ServerConfig) Server {
 	server := &StandardServer{}
 	server.config = c
+	server.requests = make(chan *CommandContext, 102400)
 
 	return server
-}
-
-func (t *StandardServer) Run() error {
-	addr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:6379")
-	if err != nil {
-		return err
-	}
-
-	var listener net.Listener
-	listener, err = net.ListenTCP("tcp", addr)
-	if err != nil {
-		return err
-	}
-	t.listener = listener
-
-	t.running = true
-
-	go t.accept()
-	return nil
 }
 
 func (t *StandardServer) accept() {
@@ -61,7 +46,16 @@ func (t *StandardServer) accept() {
 		}
 		t.session = s
 
-		go s.ReadLoop()
+		s.StartLoop()
+	}
+}
+
+func (t *StandardServer) processRequest() {
+	for t.running {
+		ctx := <-t.requests
+
+		msg := ctx.command(ctx.session, ctx.args)
+		ctx.session.QueueMessage(msg)
 	}
 }
 
@@ -82,6 +76,36 @@ func (t *StandardServer) onSessionClose(s *Session) {
 	s.SetNext(nil)
 }
 
+func (t *StandardServer) Run() error {
+	addr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:6379")
+	if err != nil {
+		return err
+	}
+
+	var listener net.Listener
+	listener, err = net.ListenTCP("tcp", addr)
+	if err != nil {
+		return err
+	}
+	t.listener = listener
+
+	t.running = true
+
+	go t.accept()
+	go t.processRequest()
+	return nil
+}
+
 func (t *StandardServer) Stop() error {
 	panic("implement me")
+}
+
+func (t *StandardServer) QueueCommand(session *Session, name *core.String, args []*core.String) {
+	ctx := &CommandContext{}
+	ctx.session = session
+	ctx.name = name
+	ctx.args = args
+	ctx.command = commands.Get(ctx.name)
+
+	t.requests <- ctx
 }
