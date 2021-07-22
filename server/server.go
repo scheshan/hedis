@@ -20,6 +20,7 @@ type StandardServer struct {
 	running  bool
 	clientId int
 	requests chan *CommandContext
+	db       []*Db
 }
 
 func NewStandard(c *ServerConfig) Server {
@@ -37,6 +38,15 @@ func (t *StandardServer) initCommands() {
 	cm.add("quit", CommandQuit)
 
 	t.cm = cm
+}
+
+func (t *StandardServer) initDb() {
+	dbSize := 16
+
+	t.db = make([]*Db, dbSize)
+	for i := 0; i < dbSize; i++ {
+		t.db[i] = NewDb()
+	}
 }
 
 func (t *StandardServer) accept() {
