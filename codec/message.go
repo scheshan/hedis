@@ -98,7 +98,7 @@ func (t *Array) Command() *core.String {
 }
 
 func (t *Array) Args() []*core.String {
-	args := make([]*core.String, 0, len(t.messages)-1)
+	args := make([]*core.String, len(t.messages)-1, len(t.messages)-1)
 
 	for i := 1; i < len(t.messages); i++ {
 		args[i-1] = t.messages[i].ToString()

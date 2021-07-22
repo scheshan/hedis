@@ -19,7 +19,7 @@ func CommandPing(s *Session, args []*core.String) codec.Message {
 	if len(args) == 1 {
 		msg = codec.NewSimpleStr(args[0])
 	} else {
-		msg = codec.NewSimpleString("PONG")
+		msg = codec.NewSimpleString("pong")
 	}
 
 	return msg

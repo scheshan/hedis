@@ -101,16 +101,19 @@ func NewSession(id int, conn *net.TCPConn, server Server) *Session {
 	s.server = server
 	s.messages = make(chan codec.Message, 1024)
 
-	log.Printf("新连接建立: %v\r\n", conn.RemoteAddr())
+	log.Printf("新连接建立: %v", conn.RemoteAddr())
 
 	return s
 }
 
 func (t *Session) handleError(err error) {
-	if err != io.EOF {
-		log.Print(err)
-		_ = t.Close()
+	if err == io.EOF {
+		log.Printf("连接主动断开: %v", t.conn.RemoteAddr())
+	} else {
+		log.Printf("连接读取发生错误: %v", err)
 	}
+
+	_ = t.Close()
 }
 
 func (t *Session) processResponse() {

@@ -194,7 +194,7 @@ func (t *Hash) Put(key *String, value interface{}) error {
 		tb = t.t2
 	}
 
-	ind := hi.hash&len(tb) - 1
+	ind := hi.hash & (len(tb) - 1)
 	hi.next = tb[ind]
 	if tb[ind] != nil {
 		tb[ind].pre = hi
@@ -227,6 +227,8 @@ func NewHashSize(size int) *Hash {
 
 	size = h.tableSize(size)
 	h.t1 = make([]*hashItem, size, size)
+
+	h.tIndex = -1
 
 	return h
 }
