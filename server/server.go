@@ -20,6 +20,7 @@ type StandardServer struct {
 	running  bool
 	clientId int
 	requests chan *CommandContext
+	subs     *core.Hash
 	db       []*Db
 }
 
@@ -27,7 +28,10 @@ func NewStandard(c *ServerConfig) Server {
 	server := &StandardServer{}
 	server.config = c
 	server.requests = make(chan *CommandContext, 102400)
+
 	server.initCommands()
+	server.initDb()
+	server.initPubSub()
 
 	return server
 }
@@ -48,6 +52,10 @@ func (t *StandardServer) initDb() {
 	for i := 0; i < dbSize; i++ {
 		t.db[i] = NewDb()
 	}
+}
+
+func (t *StandardServer) initPubSub() {
+	t.subs = core.NewHashSize(100)
 }
 
 func (t *StandardServer) accept() {
@@ -125,6 +133,10 @@ func (t *StandardServer) Stop() error {
 }
 
 func (t *StandardServer) QueueCommand(session *Session, name *core.String, args []*core.String) {
+	if (session.state & SessionFlagPubSub) == SessionFlagPubSub {
+		return
+	}
+
 	ctx := &CommandContext{}
 	ctx.session = session
 	ctx.name = name

@@ -11,6 +11,10 @@ import (
 
 type SessionCloseFunc func(s *Session)
 
+const (
+	SessionFlagPubSub = iota
+)
+
 type Session struct {
 	id        int
 	conn      *net.TCPConn
@@ -25,6 +29,7 @@ type Session struct {
 	closeFunc SessionCloseFunc
 	messages  chan codec.Message
 	running   bool
+	flag      int
 }
 
 func (t *Session) Id() int {

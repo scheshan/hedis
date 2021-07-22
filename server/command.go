@@ -14,6 +14,8 @@ type CommandContext struct {
 
 type Command func(s *Session, args []*core.String) codec.Message
 
+var MessageErrorInvalidArgNum = codec.NewErrorString("Invalid arg num")
+
 func CommandPing(s *Session, args []*core.String) codec.Message {
 	var msg codec.Message
 	if len(args) == 1 {
@@ -36,7 +38,7 @@ func CommandQuit(s *Session, args []*core.String) codec.Message {
 func CommandEcho(s *Session, args []*core.String) codec.Message {
 	var msg codec.Message
 	if len(args) != 1 {
-		msg = codec.NewErrorString("Invalid arg num")
+		msg = MessageErrorInvalidArgNum
 	} else {
 		msg = codec.NewBulkStr(args[0])
 	}
