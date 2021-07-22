@@ -62,14 +62,14 @@ func (t *String) Equal(o *String) bool {
 	return false
 }
 
-func NewEmptyString() *String {
+func NewStringEmpty() *String {
 	str := &String{}
 	str.buf = make([]byte, 0, 0)
 
 	return str
 }
 
-func NewMinimalString() *String {
+func NewStringMinSize() *String {
 	return NewString(16)
 }
 

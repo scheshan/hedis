@@ -174,3 +174,15 @@ func NewErrorString(text string) *Error {
 
 	return res
 }
+
+func NewBulkString(text string) *Bulk {
+	str := core.NewStringStr(text)
+	return NewBulkStr(str)
+}
+
+func NewBulkStr(str *core.String) *Bulk {
+	bulk := &Bulk{}
+	bulk.str = str
+
+	return bulk
+}

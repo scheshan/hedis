@@ -36,6 +36,7 @@ func (t *StandardServer) initCommands() {
 	cm := NewCommands()
 	cm.add("ping", CommandPing)
 	cm.add("quit", CommandQuit)
+	cm.add("echo", CommandEcho)
 
 	t.cm = cm
 }

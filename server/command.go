@@ -33,6 +33,17 @@ func CommandQuit(s *Session, args []*core.String) codec.Message {
 	return nil
 }
 
+func CommandEcho(s *Session, args []*core.String) codec.Message {
+	var msg codec.Message
+	if len(args) != 1 {
+		msg = codec.NewErrorString("Invalid arg num")
+	} else {
+		msg = codec.NewBulkStr(args[0])
+	}
+
+	return msg
+}
+
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
 

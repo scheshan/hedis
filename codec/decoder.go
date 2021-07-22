@@ -71,7 +71,7 @@ func (t *Decoder) readMessage(reader *bufio.Reader) (Message, error) {
 }
 
 func (t *Decoder) readLine(reader *bufio.Reader) (*core.String, error) {
-	str := core.NewEmptyString()
+	str := core.NewStringEmpty()
 
 	finish := false
 
@@ -152,12 +152,12 @@ func (t *Decoder) readBulk(reader *bufio.Reader) (*core.String, error) {
 
 	var str *core.String
 	if num < 0 {
-		str = core.NewEmptyString()
+		str = core.NewStringEmpty()
 	} else if num == 0 {
 		if err = t.readCRLF(reader); err != nil {
 			return nil, err
 		}
-		str = core.NewEmptyString()
+		str = core.NewStringEmpty()
 	} else {
 		str = core.NewString(num)
 
@@ -217,7 +217,7 @@ func (t *Decoder) readArray(reader *bufio.Reader) (*Array, error) {
 func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
 	inline := &Inline{}
 
-	arg := core.NewEmptyString()
+	arg := core.NewStringEmpty()
 	inline.args = append(inline.args, arg)
 
 	finish := false
@@ -230,7 +230,7 @@ func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
 
 		for i := 0; i < len(line); i++ {
 			if line[i] == ' ' {
-				arg = core.NewEmptyString()
+				arg = core.NewStringEmpty()
 				inline.args = append(inline.args, arg)
 			} else {
 				arg.AppendByte(line[i])
