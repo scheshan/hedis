@@ -12,7 +12,7 @@ import (
 type SessionCloseFunc func(s *Session)
 
 const (
-	SessionFlagPubSub = iota
+	SessionFlagPubSub = 1
 )
 
 type Session struct {
