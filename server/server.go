@@ -10,6 +10,7 @@ type Server interface {
 	Run() error
 	Stop() error
 	QueueCommand(session *Session, name *core.String, args []*core.String)
+	Db(db int) (*Db, error)
 }
 
 type StandardServer struct {
@@ -41,6 +42,8 @@ func (t *StandardServer) initCommands() {
 	cm.add("ping", CommandPing)
 	cm.add("quit", CommandQuit)
 	cm.add("echo", CommandEcho)
+	cm.add("set", CommandSet)
+	cm.add("get", CommandGet)
 
 	t.cm = cm
 }
@@ -144,4 +147,8 @@ func (t *StandardServer) QueueCommand(session *Session, name *core.String, args 
 	ctx.command = t.cm.Get(ctx.name)
 
 	t.requests <- ctx
+}
+
+func (t *StandardServer) Db(db int) (*Db, error) {
+	return t.db[db], nil
 }

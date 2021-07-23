@@ -160,15 +160,15 @@ func (t *Hash) Contains(key *String) bool {
 	return t.find(key) != nil
 }
 
-func (t *Hash) Get(key *String) (bool, interface{}) {
+func (t *Hash) Get(key *String) (interface{}, bool) {
 	t.transfer()
 
 	item := t.find(key)
 	if item == nil {
-		return false, nil
+		return nil, false
 	}
 
-	return true, item.value
+	return item.value, true
 }
 
 func (t *Hash) Put(key *String, value interface{}) error {

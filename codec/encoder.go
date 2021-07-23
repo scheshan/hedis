@@ -61,12 +61,19 @@ func (t *Encoder) encodeBulk(writer *bufio.Writer, msg *Bulk) error {
 		return err
 	}
 
-	if err = t.encodeNumber(writer, msg.str.Len()); err != nil {
+	len := -1
+	if msg.str != nil {
+		len = msg.str.Len()
+	}
+
+	if err = t.encodeNumber(writer, len); err != nil {
 		return err
 	}
 
-	if _, err := writer.Write(msg.str.Bytes()); err != nil {
-		return err
+	if len > -1 {
+		if _, err := writer.Write(msg.str.Bytes()); err != nil {
+			return err
+		}
 	}
 
 	return t.encodeCRLF(writer)

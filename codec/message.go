@@ -175,6 +175,13 @@ func NewErrorString(text string) *Error {
 	return res
 }
 
+func NewErrorErr(err error) *Error {
+	res := &Error{}
+	res.str = core.NewStringStr(err.Error())
+
+	return res
+}
+
 func NewBulkString(text string) *Bulk {
 	str := core.NewStringStr(text)
 	return NewBulkStr(str)
@@ -185,4 +192,11 @@ func NewBulkStr(str *core.String) *Bulk {
 	bulk.str = str
 
 	return bulk
+}
+
+func NewInteger(num int) *Integer {
+	i := &Integer{}
+	i.num = num
+
+	return i
 }

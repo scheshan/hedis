@@ -46,6 +46,64 @@ func CommandEcho(s *Session, args []*core.String) codec.Message {
 	return msg
 }
 
+/**  string commands start  **/
+
+func CommandSet(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	k := args[0]
+	v := args[1]
+
+	obj, find := db.Get(k)
+	if find {
+		if obj.objType != ObjectTypeString {
+			return codec.NewErrorString("Invalid object type")
+		}
+
+		obj.value = v
+		return codec.NewInteger(1)
+	}
+
+	obj = NewObject(ObjectTypeString, v)
+	if err := db.Put(k, obj); err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	return codec.NewInteger(1)
+}
+
+func CommandGet(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	k := args[0]
+	obj, find := db.Get(k)
+	if !find {
+		return codec.NewBulkStr(nil)
+	}
+	if obj.objType != ObjectTypeString {
+		return codec.NewErrorString("Invalid object type")
+	}
+
+	str := obj.value.(*core.String)
+	return codec.NewBulkStr(str)
+}
+
+/**  string commands end  **/
+
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
 
@@ -63,7 +121,7 @@ type Commands struct {
 }
 
 func (t *Commands) Get(name *core.String) Command {
-	find, i := t.cmMap.Get(name)
+	i, find := t.cmMap.Get(name)
 
 	if !find {
 		return CommandNotFound
