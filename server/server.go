@@ -59,15 +59,16 @@ func (t *StandardServer) initCommands() {
 	cm.add("del", CommandDel)
 	cm.add("exists", CommandExists)
 
-	cm.add("hset", CommandHSet)
+	cm.add("hdel", CommandHDel)
 	cm.add("hexists", CommandHExists)
 	cm.add("hget", CommandHGet)
 	cm.add("hgetall", CommandHGetAll)
+	cm.add("hincrby", CommandHIncrBy)
 	cm.add("hkeys", CommandHKeys)
 	cm.add("hlen", CommandHLen)
 	cm.add("hmget", CommandHMGet)
 	cm.add("hmset", CommandHMSet)
-	cm.add("hincrby", CommandHIncrBy)
+	cm.add("hset", CommandHSet)
 
 	cm.add("sadd", CommandSAdd)
 	cm.add("scard", CommandSCard)

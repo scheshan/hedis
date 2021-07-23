@@ -510,6 +510,31 @@ func CommandHIncrBy(s *Session, args []*core.String) codec.Message {
 	return codec.NewInteger(res)
 }
 
+func CommandHDel(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	fields := args[1:]
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	num := 0
+	for _, field := range fields {
+		if find && ht.Remove(field) {
+			num++
+		}
+	}
+
+	return codec.NewInteger(num)
+}
+
+//TODO hincrbyfloat, hrandfield, hcan, hsetnx, hstrlen, hvals
+
 /**  hash commands end  **/
 
 /**  set commands start  **/
@@ -593,26 +618,7 @@ func CommandSMIsMember(s *Session, args []*core.String) codec.Message {
 }
 
 func CommandSRem(s *Session, args []*core.String) codec.Message {
-	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
-	}
-
-	key := args[0]
-	fields := args[1:]
-
-	ht, _, find, err := s.Db().GetHash(key)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
-	num := 0
-	for _, field := range fields {
-		if find && ht.Remove(field) {
-			num++
-		}
-	}
-
-	return codec.NewInteger(num)
+	return CommandHDel(s, args)
 }
 
 //TODO sdiff, sdiffstore, sinter, sinterstore, smove, spop, srandmember, sscan, sunion, sunionstore
