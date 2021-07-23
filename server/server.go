@@ -49,6 +49,9 @@ func (t *StandardServer) initCommands() {
 	cm.add("strlen", CommandStrLen)
 	cm.add("append", CommandAppend)
 
+	cm.add("del", CommandDel)
+	cm.add("exists", CommandExists)
+
 	t.cm = cm
 }
 

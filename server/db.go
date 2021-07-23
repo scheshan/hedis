@@ -30,6 +30,10 @@ func (t *Db) Remove(key *core.String) bool {
 	return t.ht.Remove(key)
 }
 
+func (t *Db) Exists(key *core.String) bool {
+	return t.ht.Contains(key)
+}
+
 func NewDb() *Db {
 	db := &Db{}
 	db.ht = core.NewHashSize(16)

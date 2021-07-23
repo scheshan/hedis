@@ -15,7 +15,7 @@ type CommandContext struct {
 type Command func(s *Session, args []*core.String) codec.Message
 
 var MessageErrorInvalidArgNum = codec.NewErrorString("Invalid arg num")
-var MessageInvalidObjectType = codec.NewErrorString("Invalid object type")
+var MessageErrorInvalidObjectType = codec.NewErrorString("Invalid object type")
 
 func CommandPing(s *Session, args []*core.String) codec.Message {
 	var msg codec.Message
@@ -65,7 +65,7 @@ func CommandSet(s *Session, args []*core.String) codec.Message {
 	obj, find := db.Get(k)
 	if find {
 		if obj.objType != ObjectTypeString {
-			return MessageInvalidObjectType
+			return MessageErrorInvalidObjectType
 		}
 
 		obj.value = v
@@ -96,7 +96,7 @@ func CommandGet(s *Session, args []*core.String) codec.Message {
 		return codec.NewBulkStr(nil)
 	}
 	if obj.objType != ObjectTypeString {
-		return MessageInvalidObjectType
+		return MessageErrorInvalidObjectType
 	}
 
 	str := obj.value.(*core.String)
@@ -121,7 +121,7 @@ func CommandGetSet(s *Session, args []*core.String) codec.Message {
 		return codec.NewBulkStr(nil)
 	}
 	if obj.objType != ObjectTypeString {
-		return MessageInvalidObjectType
+		return MessageErrorInvalidObjectType
 	}
 
 	ov := obj.value.(*core.String)
@@ -145,7 +145,7 @@ func CommandGetDel(s *Session, args []*core.String) codec.Message {
 		return codec.NewBulkStr(nil)
 	}
 	if obj.objType != ObjectTypeString {
-		return MessageInvalidObjectType
+		return MessageErrorInvalidObjectType
 	}
 
 	db.Remove(k)
@@ -170,7 +170,7 @@ func CommandStrLen(s *Session, args []*core.String) codec.Message {
 		return codec.NewInteger(0)
 	}
 	if obj.objType != ObjectTypeString {
-		return MessageInvalidObjectType
+		return MessageErrorInvalidObjectType
 	}
 
 	str := obj.value.(*core.String)
@@ -201,7 +201,7 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 		}
 	} else {
 		if obj.objType != ObjectTypeString {
-			return MessageInvalidObjectType
+			return MessageErrorInvalidObjectType
 		}
 
 		str = obj.value.(*core.String)
@@ -212,6 +212,50 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 }
 
 /**  string commands end  **/
+
+/**  keys commands start  **/
+
+func CommandDel(s *Session, args []*core.String) codec.Message {
+	if len(args) == 0 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	res := 0
+	for _, key := range args {
+		if db.Remove(key) {
+			res++
+		}
+	}
+
+	return codec.NewInteger(res)
+}
+
+func CommandExists(s *Session, args []*core.String) codec.Message {
+	if len(args) == 0 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	res := 0
+	for _, key := range args {
+		if db.Exists(key) {
+			res++
+		}
+	}
+
+	return codec.NewInteger(res)
+}
+
+/**  keys commands end  **/
 
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
