@@ -1,5 +1,7 @@
 package core
 
+import "strconv"
+
 type String struct {
 	hash int
 	buf  []byte
@@ -7,6 +9,7 @@ type String struct {
 
 func (t *String) Clear() {
 	t.buf = t.buf[0:0]
+	t.hash = 0
 }
 
 func (t *String) Len() int {
@@ -19,14 +22,17 @@ func (t *String) Cap() int {
 
 func (t *String) Append(data []byte) {
 	t.buf = append(t.buf, data...)
+	t.hash = 0
 }
 
 func (t *String) AppendByte(b byte) {
 	t.buf = append(t.buf, b)
+	t.hash = 0
 }
 
 func (t *String) AppendStr(str *String) {
 	t.Append(str.buf)
+	t.hash = 0
 }
 
 func (t *String) String() string {
@@ -60,6 +66,26 @@ func (t *String) Equal(o *String) bool {
 	}
 
 	return false
+}
+
+func (t *String) Incr(num int) (int, error) {
+	i, err := t.ToInt()
+	if err != nil {
+		return 0, err
+	}
+
+	i += num
+	str := strconv.Itoa(i)
+
+	t.Clear()
+	t.Append([]byte(str))
+	t.hash = 0
+	return i, nil
+}
+
+func (t *String) ToInt() (int, error) {
+	str := string(t.buf)
+	return strconv.Atoi(str)
 }
 
 func NewStringEmpty() *String {

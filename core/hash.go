@@ -1,7 +1,5 @@
 package core
 
-import "errors"
-
 const maxHashTableSize = 1 << 30
 const maxHashSize = 1 << 31
 
@@ -189,17 +187,17 @@ func (t *Hash) Get(key *String) (interface{}, bool) {
 	return item.value, true
 }
 
-func (t *Hash) Put(key *String, value interface{}) error {
+func (t *Hash) Put(key *String, value interface{}) {
 	t.transfer()
 
 	if t.size >= maxHashSize {
-		return errors.New("hash memory overflow")
+		panic("hash memory overflow")
 	}
 
 	hi := t.find(key)
 	if hi != nil {
 		hi.value = value
-		return nil
+		return
 	}
 
 	hi = &hashItem{}
@@ -223,7 +221,7 @@ func (t *Hash) Put(key *String, value interface{}) error {
 
 	t.ensureSize()
 
-	return nil
+	return
 }
 
 func (t *Hash) Remove(key *String) bool {

@@ -22,8 +22,8 @@ func (t *Db) Get(key *core.String) (*Object, bool) {
 	return o, true
 }
 
-func (t *Db) Put(key *core.String, obj *Object) error {
-	return t.ht.Put(key, obj)
+func (t *Db) Put(key *core.String, obj *Object) {
+	t.ht.Put(key, obj)
 }
 
 func (t *Db) Remove(key *core.String) bool {

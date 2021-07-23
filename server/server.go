@@ -51,6 +51,10 @@ func (t *StandardServer) initCommands() {
 	cm.add("getdel", CommandGetDel)
 	cm.add("strlen", CommandStrLen)
 	cm.add("append", CommandAppend)
+	cm.add("incr", CommandIncr)
+	cm.add("decr", CommandDecr)
+	cm.add("incrby", CommandIncrBy)
+	cm.add("decrby", CommandDecrBy)
 
 	cm.add("del", CommandDel)
 	cm.add("exists", CommandExists)

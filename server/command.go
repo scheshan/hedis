@@ -92,9 +92,7 @@ func CommandSet(s *Session, args []*core.String) codec.Message {
 	}
 
 	obj = NewObject(ObjectTypeString, v)
-	if err := s.Db().Put(k, obj); err != nil {
-		return codec.NewErrorErr(err)
-	}
+	s.Db().Put(k, obj)
 
 	return codec.NewInteger(1)
 }
@@ -190,9 +188,7 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 	if !find {
 		str = v
 		obj = NewObject(ObjectTypeString, str)
-		if err := s.Db().Put(k, obj); err != nil {
-			return codec.NewErrorErr(err)
-		}
+		s.Db().Put(k, obj)
 	} else {
 		if obj.objType != ObjectTypeString {
 			return MessageErrorInvalidObjectType
@@ -203,6 +199,81 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 	}
 
 	return codec.NewInteger(str.Len())
+}
+
+func commandIncrBy(s *Session, key *core.String, num int) codec.Message {
+	var str *core.String
+	obj, find := s.Db().Get(key)
+	if !find {
+		str = core.NewStringStr("0")
+		obj = NewObject(ObjectTypeString, str)
+		s.Db().Put(key, obj)
+	} else {
+		if obj.objType != ObjectTypeString {
+			return MessageErrorInvalidObjectType
+		}
+
+		str = obj.value.(*core.String)
+	}
+
+	res, err := str.Incr(num)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	return codec.NewInteger(res)
+}
+
+func CommandIncr(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+
+	return commandIncrBy(s, key, 1)
+}
+
+func CommandDecr(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+
+	return commandIncrBy(s, key, -1)
+}
+
+func CommandIncrBy(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	arg := args[1]
+
+	num, err := arg.ToInt()
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	return commandIncrBy(s, key, num)
+}
+
+func CommandDecrBy(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	arg := args[1]
+
+	num, err := arg.ToInt()
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	return commandIncrBy(s, key, -num)
 }
 
 /**  string commands end  **/
@@ -257,9 +328,7 @@ func CommandHSet(s *Session, args []*core.String) codec.Message {
 
 	if obj == nil {
 		obj = NewObject(ObjectTypeHash, core.NewHashSize(16))
-		if err := s.Db().Put(key, obj); err != nil {
-			return codec.NewErrorErr(err)
-		}
+		s.Db().Put(key, obj)
 	}
 
 	ht := obj.value.(*core.Hash)
@@ -267,9 +336,7 @@ func CommandHSet(s *Session, args []*core.String) codec.Message {
 		field := args[i]
 		value := args[i+1]
 
-		if err := ht.Put(field, value); err != nil {
-			return codec.NewErrorErr(err)
-		}
+		ht.Put(field, value)
 	}
 
 	return codec.NewInteger(1)
@@ -441,18 +508,14 @@ func CommandHMSet(s *Session, args []*core.String) codec.Message {
 	} else {
 		ht = core.NewHashSize(16)
 		obj = NewObject(ObjectTypeHash, ht)
-		if err := s.Db().Put(key, obj); err != nil {
-			return codec.NewErrorErr(err)
-		}
+		s.Db().Put(key, obj)
 	}
 
 	for i := 1; i < len(args)-1; i++ {
 		f := args[i]
 		v := args[i+1]
 
-		if err := ht.Put(f, v); err != nil {
-			return codec.NewErrorErr(err)
-		}
+		ht.Put(f, v)
 	}
 
 	return MessageSimpleOK
