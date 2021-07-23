@@ -83,18 +83,14 @@ func CommandSet(s *Session, args []*core.String) codec.Message {
 	k := args[0]
 	v := args[1]
 
-	obj, find := s.Db().Get(k)
-	if find {
-		if obj.objType != ObjectTypeString {
-			return MessageErrorInvalidObjectType
-		}
-
-		obj.value = v
-		return codec.NewInteger(1)
+	_, obj, find, err := s.Db().GetStringOrCreate(k, v)
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
-	obj = NewObject(ObjectTypeString, v)
-	s.Db().Put(k, obj)
+	if find {
+		obj.value = v
+	}
 
 	return codec.NewInteger(1)
 }
@@ -144,17 +140,13 @@ func CommandGetDel(s *Session, args []*core.String) codec.Message {
 	}
 
 	k := args[0]
-	obj, find := s.Db().Get(k)
-	if !find {
-		return codec.NewBulkStr(nil)
-	}
-	if obj.objType != ObjectTypeString {
-		return MessageErrorInvalidObjectType
+
+	str, _, err := s.Db().GetString(k)
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
 	s.Db().Remove(k)
-	str := obj.value.(*core.String)
-
 	return codec.NewBulkStr(str)
 }
 
@@ -164,15 +156,15 @@ func CommandStrLen(s *Session, args []*core.String) codec.Message {
 	}
 
 	k := args[0]
-	obj, find := s.Db().Get(k)
-	if !find {
-		return codec.NewInteger(0)
-	}
-	if obj.objType != ObjectTypeString {
-		return MessageErrorInvalidObjectType
+
+	str, _, err := s.Db().GetString(k)
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
-	str := obj.value.(*core.String)
+	if str == nil {
+		return codec.NewInteger(0)
+	}
 	return codec.NewInteger(str.Len())
 }
 
@@ -184,19 +176,11 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 	k := args[0]
 	v := args[1]
 
-	var str *core.String
-
-	obj, find := s.Db().Get(k)
-	if !find {
-		str = v
-		obj = NewObject(ObjectTypeString, str)
-		s.Db().Put(k, obj)
-	} else {
-		if obj.objType != ObjectTypeString {
-			return MessageErrorInvalidObjectType
-		}
-
-		str = obj.value.(*core.String)
+	str, _, find, err := s.Db().GetStringOrCreate(k, v)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+	if find {
 		str.AppendStr(v)
 	}
 
@@ -204,18 +188,9 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 }
 
 func commandIncrBy(s *Session, key *core.String, num int) codec.Message {
-	var str *core.String
-	obj, find := s.Db().Get(key)
-	if !find {
-		str = core.NewStringStr("0")
-		obj = NewObject(ObjectTypeString, str)
-		s.Db().Put(key, obj)
-	} else {
-		if obj.objType != ObjectTypeString {
-			return MessageErrorInvalidObjectType
-		}
-
-		str = obj.value.(*core.String)
+	str, _, _, err := s.Db().GetStringOrCreate(key, core.NewStringStr("0"))
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
 	res, err := str.Incr(num)
