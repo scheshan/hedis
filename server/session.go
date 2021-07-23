@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"errors"
 	"hedis/codec"
 	"io"
 	"log"
@@ -19,7 +20,7 @@ type Session struct {
 	id        int
 	conn      *net.TCPConn
 	server    Server
-	db        int
+	db        *Db
 	auth      bool
 	pre       *Session
 	next      *Session
@@ -40,11 +41,11 @@ func (t *Session) Server() Server {
 	return t.server
 }
 
-func (t *Session) Db() int {
+func (t *Session) Db() *Db {
 	return t.db
 }
 
-func (t *Session) SetDb(db int) {
+func (t *Session) SetDb(db *Db) {
 	t.db = db
 }
 
@@ -165,6 +166,19 @@ func (t *Session) StartLoop() {
 
 func (t *Session) QueueMessage(msg codec.Message) {
 	t.messages <- msg
+}
+
+func (t *Session) SelectDb(dbNum int) error {
+	db, err := t.Server().Db(dbNum)
+	if err != nil {
+		return err
+	}
+	if db == nil {
+		return errors.New("Invalid db num")
+	}
+
+	t.db = db
+	return nil
 }
 
 func (t *Session) Close() error {

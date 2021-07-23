@@ -3,6 +3,7 @@ package server
 import (
 	"hedis/codec"
 	"hedis/core"
+	"strconv"
 )
 
 type CommandContext struct {
@@ -16,6 +17,9 @@ type Command func(s *Session, args []*core.String) codec.Message
 
 var MessageErrorInvalidArgNum = codec.NewErrorString("Invalid arg num")
 var MessageErrorInvalidObjectType = codec.NewErrorString("Invalid object type")
+var MessageSimpleOK = codec.NewSimpleString("ok")
+
+/**  connection commands start  **/
 
 func CommandPing(s *Session, args []*core.String) codec.Message {
 	var msg codec.Message
@@ -37,15 +41,34 @@ func CommandQuit(s *Session, args []*core.String) codec.Message {
 }
 
 func CommandEcho(s *Session, args []*core.String) codec.Message {
-	var msg codec.Message
 	if len(args) != 1 {
-		msg = MessageErrorInvalidArgNum
-	} else {
-		msg = codec.NewBulkStr(args[0])
+		return MessageErrorInvalidArgNum
 	}
+
+	msg := codec.NewBulkStr(args[0])
 
 	return msg
 }
+
+func CommandSelect(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	dbNum, err := strconv.Atoi(args[0].String())
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	err = s.SelectDb(dbNum)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	return MessageSimpleOK
+}
+
+/**  connection commands end  **/
 
 /**  string commands start  **/
 
@@ -54,15 +77,10 @@ func CommandSet(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	k := args[0]
 	v := args[1]
 
-	obj, find := db.Get(k)
+	obj, find := s.Db().Get(k)
 	if find {
 		if obj.objType != ObjectTypeString {
 			return MessageErrorInvalidObjectType
@@ -73,7 +91,7 @@ func CommandSet(s *Session, args []*core.String) codec.Message {
 	}
 
 	obj = NewObject(ObjectTypeString, v)
-	if err := db.Put(k, obj); err != nil {
+	if err := s.Db().Put(k, obj); err != nil {
 		return codec.NewErrorErr(err)
 	}
 
@@ -85,13 +103,8 @@ func CommandGet(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	k := args[0]
-	obj, find := db.Get(k)
+	obj, find := s.Db().Get(k)
 	if !find {
 		return codec.NewBulkStr(nil)
 	}
@@ -108,15 +121,10 @@ func CommandGetSet(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	k := args[0]
 	v := args[1]
 
-	obj, find := db.Get(k)
+	obj, find := s.Db().Get(k)
 	if !find {
 		return codec.NewBulkStr(nil)
 	}
@@ -134,13 +142,8 @@ func CommandGetDel(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	k := args[0]
-	obj, find := db.Get(k)
+	obj, find := s.Db().Get(k)
 	if !find {
 		return codec.NewBulkStr(nil)
 	}
@@ -148,7 +151,7 @@ func CommandGetDel(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidObjectType
 	}
 
-	db.Remove(k)
+	s.Db().Remove(k)
 	str := obj.value.(*core.String)
 
 	return codec.NewBulkStr(str)
@@ -159,13 +162,8 @@ func CommandStrLen(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	k := args[0]
-	obj, find := db.Get(k)
+	obj, find := s.Db().Get(k)
 	if !find {
 		return codec.NewInteger(0)
 	}
@@ -182,21 +180,16 @@ func CommandAppend(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	k := args[0]
 	v := args[1]
 
 	var str *core.String
 
-	obj, find := db.Get(k)
+	obj, find := s.Db().Get(k)
 	if !find {
 		str = v
 		obj = NewObject(ObjectTypeString, str)
-		if err = db.Put(k, obj); err != nil {
+		if err := s.Db().Put(k, obj); err != nil {
 			return codec.NewErrorErr(err)
 		}
 	} else {
@@ -220,14 +213,9 @@ func CommandDel(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	res := 0
 	for _, key := range args {
-		if db.Remove(key) {
+		if s.Db().Remove(key) {
 			res++
 		}
 	}
@@ -240,14 +228,9 @@ func CommandExists(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	db, err := s.Server().Db(s.db)
-	if err != nil {
-		return codec.NewErrorErr(err)
-	}
-
 	res := 0
 	for _, key := range args {
-		if db.Exists(key) {
+		if s.Db().Exists(key) {
 			res++
 		}
 	}

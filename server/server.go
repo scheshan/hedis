@@ -39,9 +39,12 @@ func NewStandard(c *ServerConfig) Server {
 
 func (t *StandardServer) initCommands() {
 	cm := NewCommands()
+
 	cm.add("ping", CommandPing)
 	cm.add("quit", CommandQuit)
 	cm.add("echo", CommandEcho)
+	cm.add("select", CommandSelect)
+
 	cm.add("set", CommandSet)
 	cm.add("get", CommandGet)
 	cm.add("getset", CommandGetSet)
@@ -78,6 +81,12 @@ func (t *StandardServer) accept() {
 		t.clientId++
 		s := NewSession(t.clientId, conn.(*net.TCPConn), t)
 		s.SetCloseFunc(t.onSessionClose)
+
+		err = s.SelectDb(0)
+		if err != nil {
+			s.Close()
+			continue
+		}
 
 		s.SetNext(t.session)
 		if t.session != nil {
