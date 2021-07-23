@@ -1,6 +1,8 @@
 package server
 
-import "hedis/core"
+import (
+	"hedis/core"
+)
 
 type Db struct {
 	ht *core.Hash
@@ -22,6 +24,10 @@ func (t *Db) Get(key *core.String) (*Object, bool) {
 
 func (t *Db) Put(key *core.String, obj *Object) error {
 	return t.ht.Put(key, obj)
+}
+
+func (t *Db) Remove(key *core.String) bool {
+	return t.ht.Remove(key)
 }
 
 func NewDb() *Db {

@@ -74,9 +74,10 @@ func (t *Encoder) encodeBulk(writer *bufio.Writer, msg *Bulk) error {
 		if _, err := writer.Write(msg.str.Bytes()); err != nil {
 			return err
 		}
+		return t.encodeCRLF(writer)
 	}
 
-	return t.encodeCRLF(writer)
+	return nil
 }
 
 func (t *Encoder) encodeArray(writer *bufio.Writer, msg *Array) error {

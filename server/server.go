@@ -44,6 +44,10 @@ func (t *StandardServer) initCommands() {
 	cm.add("echo", CommandEcho)
 	cm.add("set", CommandSet)
 	cm.add("get", CommandGet)
+	cm.add("getset", CommandGetSet)
+	cm.add("getdel", CommandGetDel)
+	cm.add("strlen", CommandStrLen)
+	cm.add("append", CommandAppend)
 
 	t.cm = cm
 }

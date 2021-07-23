@@ -15,6 +15,7 @@ type CommandContext struct {
 type Command func(s *Session, args []*core.String) codec.Message
 
 var MessageErrorInvalidArgNum = codec.NewErrorString("Invalid arg num")
+var MessageInvalidObjectType = codec.NewErrorString("Invalid object type")
 
 func CommandPing(s *Session, args []*core.String) codec.Message {
 	var msg codec.Message
@@ -64,7 +65,7 @@ func CommandSet(s *Session, args []*core.String) codec.Message {
 	obj, find := db.Get(k)
 	if find {
 		if obj.objType != ObjectTypeString {
-			return codec.NewErrorString("Invalid object type")
+			return MessageInvalidObjectType
 		}
 
 		obj.value = v
@@ -95,11 +96,119 @@ func CommandGet(s *Session, args []*core.String) codec.Message {
 		return codec.NewBulkStr(nil)
 	}
 	if obj.objType != ObjectTypeString {
-		return codec.NewErrorString("Invalid object type")
+		return MessageInvalidObjectType
 	}
 
 	str := obj.value.(*core.String)
 	return codec.NewBulkStr(str)
+}
+
+func CommandGetSet(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	k := args[0]
+	v := args[1]
+
+	obj, find := db.Get(k)
+	if !find {
+		return codec.NewBulkStr(nil)
+	}
+	if obj.objType != ObjectTypeString {
+		return MessageInvalidObjectType
+	}
+
+	ov := obj.value.(*core.String)
+	obj.value = v
+	return codec.NewBulkStr(ov)
+}
+
+func CommandGetDel(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	k := args[0]
+	obj, find := db.Get(k)
+	if !find {
+		return codec.NewBulkStr(nil)
+	}
+	if obj.objType != ObjectTypeString {
+		return MessageInvalidObjectType
+	}
+
+	db.Remove(k)
+	str := obj.value.(*core.String)
+
+	return codec.NewBulkStr(str)
+}
+
+func CommandStrLen(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	k := args[0]
+	obj, find := db.Get(k)
+	if !find {
+		return codec.NewInteger(0)
+	}
+	if obj.objType != ObjectTypeString {
+		return MessageInvalidObjectType
+	}
+
+	str := obj.value.(*core.String)
+	return codec.NewInteger(str.Len())
+}
+
+func CommandAppend(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	db, err := s.Server().Db(s.db)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	k := args[0]
+	v := args[1]
+
+	var str *core.String
+
+	obj, find := db.Get(k)
+	if !find {
+		str = v
+		obj = NewObject(ObjectTypeString, str)
+		if err = db.Put(k, obj); err != nil {
+			return codec.NewErrorErr(err)
+		}
+	} else {
+		if obj.objType != ObjectTypeString {
+			return MessageInvalidObjectType
+		}
+
+		str = obj.value.(*core.String)
+		str.AppendStr(v)
+	}
+
+	return codec.NewInteger(str.Len())
 }
 
 /**  string commands end  **/
