@@ -5,6 +5,8 @@ import "errors"
 const maxHashTableSize = 1 << 30
 const maxHashSize = 1 << 31
 
+type HashFunc func(key *String, value interface{})
+
 //Hash	哈希数据结构
 //
 //内部维护了2个数组，t1是主要存储元素的数组，t2用来做扩容迁移。当容量达到阈值后，Hash触发rehash。
@@ -151,7 +153,23 @@ func (t *Hash) removeInTable(key *String, table []*hashItem) bool {
 	hi.pre = nil
 	hi.next = nil
 
+	t.size--
+
 	return true
+}
+
+func (t *Hash) iterate(ind int, table []*hashItem, hashFunc HashFunc) {
+	head := table[ind]
+	for head != nil {
+		hashFunc(head.key, head.value)
+		head = head.next
+	}
+}
+
+func (t *Hash) iterateTable(table []*hashItem, hashFunc HashFunc) {
+	for i := 0; i < len(table); i++ {
+		t.iterate(i, table, hashFunc)
+	}
 }
 
 func (t *Hash) Contains(key *String) bool {
@@ -220,6 +238,14 @@ func (t *Hash) Remove(key *String) bool {
 	}
 
 	return false
+}
+
+func (t *Hash) Iterate(hashFunc HashFunc) {
+	t.iterateTable(t.t1, hashFunc)
+
+	if t.isTransferring() {
+		t.iterateTable(t.t2, hashFunc)
+	}
 }
 
 func NewHashSize(size int) *Hash {

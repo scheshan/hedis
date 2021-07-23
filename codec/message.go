@@ -111,6 +111,10 @@ func (t *Array) ToString() *core.String {
 	return nil
 }
 
+func (t *Array) AppendStr(str *core.String) {
+	t.messages = append(t.messages, NewBulkStr(str))
+}
+
 type Inline struct {
 	args []*core.String
 }
@@ -199,4 +203,11 @@ func NewInteger(num int) *Integer {
 	i.num = num
 
 	return i
+}
+
+func NewArray(num int) *Array {
+	arr := &Array{}
+	arr.messages = make([]Message, 0, num)
+
+	return arr
 }

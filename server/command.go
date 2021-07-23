@@ -18,6 +18,7 @@ type Command func(s *Session, args []*core.String) codec.Message
 var MessageErrorInvalidArgNum = codec.NewErrorString("Invalid arg num")
 var MessageErrorInvalidObjectType = codec.NewErrorString("Invalid object type")
 var MessageSimpleOK = codec.NewSimpleString("ok")
+var MessageSimpleNil = codec.NewSimpleStr(nil)
 
 /**  connection commands start  **/
 
@@ -239,6 +240,94 @@ func CommandExists(s *Session, args []*core.String) codec.Message {
 }
 
 /**  keys commands end  **/
+
+/**  hash commands start  **/
+
+func CommandHSet(s *Session, args []*core.String) codec.Message {
+	if len(args) < 3 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+
+	if find && obj.objType != ObjectTypeHash {
+		return MessageErrorInvalidObjectType
+	}
+
+	if obj == nil {
+		obj = NewObject(ObjectTypeHash, core.NewHashSize(16))
+		if err := s.Db().Put(key, obj); err != nil {
+			return codec.NewErrorErr(err)
+		}
+	}
+
+	ht := obj.value.(*core.Hash)
+	for i := 1; i < len(args)-1; i += 2 {
+		field := args[i]
+		value := args[i+1]
+
+		if err := ht.Put(field, value); err != nil {
+			return codec.NewErrorErr(err)
+		}
+	}
+
+	return codec.NewInteger(1)
+}
+
+func CommandHExists(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if !find {
+		return codec.NewInteger(0)
+	}
+
+	if obj.objType != ObjectTypeHash {
+		return MessageErrorInvalidObjectType
+	}
+	ht := obj.value.(*core.Hash)
+
+	res := 0
+	if ht.Contains(args[1]) {
+		res = 1
+	}
+
+	return codec.NewInteger(res)
+}
+
+func CommandHGet(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	var str *core.String
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if find {
+		if obj.objType != ObjectTypeHash {
+			return MessageErrorInvalidObjectType
+		}
+
+		ht := obj.value.(*core.Hash)
+		i, find := ht.Get(args[1])
+		if find {
+			str = i.(*core.String)
+		}
+	}
+
+	return codec.NewBulkStr(str)
+}
+
+func CommandHGetAll(s *Session, args []*core.String) codec.Message {
+
+}
+
+/**  hash commands end  **/
 
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
