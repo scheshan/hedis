@@ -115,6 +115,10 @@ func (t *Array) AppendStr(str *core.String) {
 	t.messages = append(t.messages, NewBulkStr(str))
 }
 
+func (t *Array) AppendMessage(msg Message) {
+	t.messages = append(t.messages, msg)
+}
+
 type Inline struct {
 	args []*core.String
 }

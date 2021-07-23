@@ -15,8 +15,8 @@ type CommandContext struct {
 
 type Command func(s *Session, args []*core.String) codec.Message
 
-var MessageErrorInvalidArgNum = codec.NewErrorString("Invalid arg num")
-var MessageErrorInvalidObjectType = codec.NewErrorString("Invalid object type")
+var MessageErrorInvalidArgNum = codec.NewErrorString("ERR wrong number of arguments for this command")
+var MessageErrorInvalidObjectType = codec.NewErrorString("WRONGTYPE Operation against a key holding the wrong kind of value")
 var MessageSimpleOK = codec.NewSimpleString("ok")
 var MessageSimpleNil = codec.NewSimpleStr(nil)
 
@@ -339,13 +339,123 @@ func CommandHGetAll(s *Session, args []*core.String) codec.Message {
 	}
 
 	ht := obj.value.(*core.Hash)
-	msg := codec.NewArraySize(ht.Size())
+	msg := codec.NewArraySize(ht.Size() << 1)
 	ht.Iterate(func(k *core.String, v interface{}) {
 		msg.AppendStr(k)
 		msg.AppendStr(v.(*core.String))
 	})
 
 	return msg
+}
+
+func CommandHKeys(s *Session, args []*core.String) codec.Message {
+	if len(args) < 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if !find {
+		return codec.NewArrayEmpty()
+	}
+
+	if obj.objType != ObjectTypeHash {
+		return MessageErrorInvalidObjectType
+	}
+
+	ht := obj.value.(*core.Hash)
+	msg := codec.NewArraySize(ht.Size())
+	ht.Iterate(func(k *core.String, v interface{}) {
+		msg.AppendStr(k)
+	})
+
+	return msg
+}
+
+func CommandHLen(s *Session, args []*core.String) codec.Message {
+	if len(args) < 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if !find {
+		return codec.NewInteger(0)
+	}
+
+	if obj.objType != ObjectTypeHash {
+		return MessageErrorInvalidObjectType
+	}
+
+	ht := obj.value.(*core.Hash)
+	return codec.NewInteger(ht.Size())
+}
+
+func CommandHMGet(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	var ht *core.Hash
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if find {
+		if obj.objType != ObjectTypeHash {
+			return MessageErrorInvalidObjectType
+		}
+
+		ht = obj.value.(*core.Hash)
+	}
+
+	msg := codec.NewArraySize(len(args) - 1)
+	for i := 1; i < len(args); i++ {
+		if ht != nil {
+			v, find := ht.Get(args[i])
+			if find {
+				msg.AppendStr(v.(*core.String))
+				continue
+			}
+		}
+		msg.AppendStr(nil)
+	}
+
+	return msg
+}
+
+func CommandHMSet(s *Session, args []*core.String) codec.Message {
+	if len(args) < 3 {
+		return MessageErrorInvalidArgNum
+	}
+
+	var ht *core.Hash
+
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if find && obj.objType != ObjectTypeHash {
+		return MessageErrorInvalidObjectType
+	}
+
+	if find {
+		ht = obj.value.(*core.Hash)
+	} else {
+		ht = core.NewHashSize(16)
+		obj = NewObject(ObjectTypeHash, ht)
+		if err := s.Db().Put(key, obj); err != nil {
+			return codec.NewErrorErr(err)
+		}
+	}
+
+	for i := 1; i < len(args)-1; i++ {
+		f := args[i]
+		v := args[i+1]
+
+		if err := ht.Put(f, v); err != nil {
+			return codec.NewErrorErr(err)
+		}
+	}
+
+	return MessageSimpleOK
 }
 
 /**  hash commands end  **/
