@@ -512,6 +512,35 @@ func CommandHIncrBy(s *Session, args []*core.String) codec.Message {
 
 /**  hash commands end  **/
 
+/**  set commands start  **/
+
+func CommandSAdd(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	field := args[1]
+
+	ht, _, _, err := s.Db().GetHashOrCreate(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	if ht.Contains(field) {
+		return codec.NewInteger(0)
+	}
+
+	ht.Put(field, core.HashDefaultValue)
+	return codec.NewInteger(1)
+}
+
+func CommandSCard(s *Session, args []*core.String) codec.Message {
+	return CommandHLen(s, args)
+}
+
+/**  set commands end  **/
+
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
 

@@ -5,6 +5,8 @@ const maxHashSize = 1 << 31
 
 type HashFunc func(key *String, value interface{})
 
+var HashDefaultValue = true
+
 //Hash	哈希数据结构
 //
 //内部维护了2个数组，t1是主要存储元素的数组，t2用来做扩容迁移。当容量达到阈值后，Hash触发rehash。

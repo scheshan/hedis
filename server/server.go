@@ -69,6 +69,9 @@ func (t *StandardServer) initCommands() {
 	cm.add("hmset", CommandHMSet)
 	cm.add("hincrby", CommandHIncrBy)
 
+	cm.add("sadd", CommandSAdd)
+	cm.add("scard", CommandSCard)
+
 	t.cm = cm
 }
 
