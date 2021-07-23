@@ -22,6 +22,42 @@ func (t *Db) Get(key *core.String) (*Object, bool) {
 	return o, true
 }
 
+func (t *Db) GetOrCreateString(key *core.String, def string) (*core.String, error) {
+	var res *core.String
+
+	obj, find := t.Get(key)
+	if !find {
+		res = core.NewStringStr(def)
+		obj = NewObject(ObjectTypeString, res)
+		t.ht.Put(key, obj)
+	} else {
+		if obj.objType != ObjectTypeString {
+			return nil, ErrorInvalidObjectType
+		}
+		res = obj.value.(*core.String)
+	}
+
+	return res, nil
+}
+
+func (t *Db) GetOrCreateHash(key *core.String) (*core.Hash, error) {
+	var res *core.Hash
+
+	obj, find := t.Get(key)
+	if !find {
+		res = core.NewHashSize(16)
+		obj = NewObject(ObjectTypeHash, res)
+		t.ht.Put(key, obj)
+	} else {
+		if obj.objType != ObjectTypeHash {
+			return nil, ErrorInvalidObjectType
+		}
+		res = obj.value.(*core.Hash)
+	}
+
+	return res, nil
+}
+
 func (t *Db) Put(key *core.String, obj *Object) {
 	t.ht.Put(key, obj)
 }

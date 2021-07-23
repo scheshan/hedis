@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"hedis/codec"
 	"hedis/core"
 	"strconv"
@@ -15,8 +16,9 @@ type CommandContext struct {
 
 type Command func(s *Session, args []*core.String) codec.Message
 
+var ErrorInvalidObjectType = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
 var MessageErrorInvalidArgNum = codec.NewErrorString("ERR wrong number of arguments for this command")
-var MessageErrorInvalidObjectType = codec.NewErrorString("WRONGTYPE Operation against a key holding the wrong kind of value")
+var MessageErrorInvalidObjectType = codec.NewErrorErr(ErrorInvalidObjectType)
 var MessageSimpleOK = codec.NewSimpleString("ok")
 var MessageSimpleNil = codec.NewSimpleStr(nil)
 
@@ -519,6 +521,42 @@ func CommandHMSet(s *Session, args []*core.String) codec.Message {
 	}
 
 	return MessageSimpleOK
+}
+
+func CommandHIncrBy(s *Session, args []*core.String) codec.Message {
+	if len(args) != 3 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	field := args[1]
+	arg := args[2]
+
+	num, err := arg.ToInt()
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	ht, err := s.Db().GetOrCreateHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	var str *core.String
+	v, find := ht.Get(field)
+	if !find {
+		str = core.NewStringStr("0")
+		ht.Put(field, str)
+	} else {
+		str = v.(*core.String)
+	}
+
+	res, err := str.Incr(num)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	return codec.NewInteger(res)
 }
 
 /**  hash commands end  **/
