@@ -141,7 +141,7 @@ func CommandGetDel(s *Session, args []*core.String) codec.Message {
 
 	k := args[0]
 
-	str, _, err := s.Db().GetString(k)
+	str, _, _, err := s.Db().GetString(k)
 	if err != nil {
 		return codec.NewErrorErr(err)
 	}
@@ -157,7 +157,7 @@ func CommandStrLen(s *Session, args []*core.String) codec.Message {
 
 	k := args[0]
 
-	str, _, err := s.Db().GetString(k)
+	str, _, _, err := s.Db().GetString(k)
 	if err != nil {
 		return codec.NewErrorErr(err)
 	}
@@ -297,18 +297,12 @@ func CommandHSet(s *Session, args []*core.String) codec.Message {
 	}
 
 	key := args[0]
-	obj, find := s.Db().Get(key)
 
-	if find && obj.objType != ObjectTypeHash {
-		return MessageErrorInvalidObjectType
+	ht, _, _, err := s.Db().GetHashOrCreate(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
-	if obj == nil {
-		obj = NewObject(ObjectTypeHash, core.NewHashSize(16))
-		s.Db().Put(key, obj)
-	}
-
-	ht := obj.value.(*core.Hash)
 	for i := 1; i < len(args)-1; i += 2 {
 		field := args[i]
 		value := args[i+1]
@@ -325,15 +319,14 @@ func CommandHExists(s *Session, args []*core.String) codec.Message {
 	}
 
 	key := args[0]
-	obj, find := s.Db().Get(key)
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
 	if !find {
 		return codec.NewInteger(0)
 	}
-
-	if obj.objType != ObjectTypeHash {
-		return MessageErrorInvalidObjectType
-	}
-	ht := obj.value.(*core.Hash)
 
 	res := 0
 	if ht.Contains(args[1]) {
@@ -351,13 +344,12 @@ func CommandHGet(s *Session, args []*core.String) codec.Message {
 	var str *core.String
 
 	key := args[0]
-	obj, find := s.Db().Get(key)
-	if find {
-		if obj.objType != ObjectTypeHash {
-			return MessageErrorInvalidObjectType
-		}
 
-		ht := obj.value.(*core.Hash)
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+	if find {
 		i, find := ht.Get(args[1])
 		if find {
 			str = i.(*core.String)
@@ -373,16 +365,16 @@ func CommandHGetAll(s *Session, args []*core.String) codec.Message {
 	}
 
 	key := args[0]
-	obj, find := s.Db().Get(key)
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
 	if !find {
 		return codec.NewArrayEmpty()
 	}
 
-	if obj.objType != ObjectTypeHash {
-		return MessageErrorInvalidObjectType
-	}
-
-	ht := obj.value.(*core.Hash)
 	msg := codec.NewArraySize(ht.Size() << 1)
 	ht.Iterate(func(k *core.String, v interface{}) {
 		msg.AppendStr(k)
@@ -398,16 +390,16 @@ func CommandHKeys(s *Session, args []*core.String) codec.Message {
 	}
 
 	key := args[0]
-	obj, find := s.Db().Get(key)
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
 	if !find {
 		return codec.NewArrayEmpty()
 	}
 
-	if obj.objType != ObjectTypeHash {
-		return MessageErrorInvalidObjectType
-	}
-
-	ht := obj.value.(*core.Hash)
 	msg := codec.NewArraySize(ht.Size())
 	ht.Iterate(func(k *core.String, v interface{}) {
 		msg.AppendStr(k)
@@ -422,16 +414,15 @@ func CommandHLen(s *Session, args []*core.String) codec.Message {
 	}
 
 	key := args[0]
-	obj, find := s.Db().Get(key)
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
 	if !find {
 		return codec.NewInteger(0)
 	}
 
-	if obj.objType != ObjectTypeHash {
-		return MessageErrorInvalidObjectType
-	}
-
-	ht := obj.value.(*core.Hash)
 	return codec.NewInteger(ht.Size())
 }
 
@@ -440,21 +431,15 @@ func CommandHMGet(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	var ht *core.Hash
-
 	key := args[0]
-	obj, find := s.Db().Get(key)
-	if find {
-		if obj.objType != ObjectTypeHash {
-			return MessageErrorInvalidObjectType
-		}
-
-		ht = obj.value.(*core.Hash)
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
 	msg := codec.NewArraySize(len(args) - 1)
 	for i := 1; i < len(args); i++ {
-		if ht != nil {
+		if find {
 			v, find := ht.Get(args[i])
 			if find {
 				msg.AppendStr(v.(*core.String))
@@ -472,20 +457,11 @@ func CommandHMSet(s *Session, args []*core.String) codec.Message {
 		return MessageErrorInvalidArgNum
 	}
 
-	var ht *core.Hash
-
 	key := args[0]
-	obj, find := s.Db().Get(key)
-	if find && obj.objType != ObjectTypeHash {
-		return MessageErrorInvalidObjectType
-	}
 
-	if find {
-		ht = obj.value.(*core.Hash)
-	} else {
-		ht = core.NewHashSize(16)
-		obj = NewObject(ObjectTypeHash, ht)
-		s.Db().Put(key, obj)
+	ht, _, _, err := s.Db().GetHashOrCreate(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
 	}
 
 	for i := 1; i < len(args)-1; i++ {
@@ -512,7 +488,7 @@ func CommandHIncrBy(s *Session, args []*core.String) codec.Message {
 		return codec.NewErrorErr(err)
 	}
 
-	ht, err := s.Db().GetOrCreateHash(key)
+	ht, _, _, err := s.Db().GetHashOrCreate(key)
 	if err != nil {
 		return codec.NewErrorErr(err)
 	}

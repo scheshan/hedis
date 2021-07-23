@@ -32,7 +32,7 @@ func (t *Db) GetStringOrCreate(key *core.String, def *core.String) (*core.String
 		t.ht.Put(key, obj)
 	} else {
 		if obj.objType != ObjectTypeString {
-			return nil, nil, false, ErrorInvalidObjectType
+			return nil, nil, find, ErrorInvalidObjectType
 		}
 		res = obj.value.(*core.String)
 	}
@@ -40,21 +40,21 @@ func (t *Db) GetStringOrCreate(key *core.String, def *core.String) (*core.String
 	return res, obj, find, nil
 }
 
-func (t *Db) GetString(key *core.String) (*core.String, *Object, error) {
+func (t *Db) GetString(key *core.String) (*core.String, *Object, bool, error) {
 	obj, find := t.Get(key)
 	if !find {
-		return nil, nil, nil
+		return nil, nil, find, nil
 	}
 
 	if obj.objType != ObjectTypeString {
-		return nil, nil, ErrorInvalidObjectType
+		return nil, nil, find, ErrorInvalidObjectType
 	}
 
 	res := obj.value.(*core.String)
-	return res, obj, nil
+	return res, obj, find, nil
 }
 
-func (t *Db) GetOrCreateHash(key *core.String) (*core.Hash, error) {
+func (t *Db) GetHashOrCreate(key *core.String) (*core.Hash, *Object, bool, error) {
 	var res *core.Hash
 
 	obj, find := t.Get(key)
@@ -64,12 +64,26 @@ func (t *Db) GetOrCreateHash(key *core.String) (*core.Hash, error) {
 		t.ht.Put(key, obj)
 	} else {
 		if obj.objType != ObjectTypeHash {
-			return nil, ErrorInvalidObjectType
+			return nil, nil, find, ErrorInvalidObjectType
 		}
 		res = obj.value.(*core.Hash)
 	}
 
-	return res, nil
+	return res, obj, find, nil
+}
+
+func (t *Db) GetHash(key *core.String) (*core.Hash, *Object, bool, error) {
+	obj, find := t.Get(key)
+	if !find {
+		return nil, nil, find, nil
+	}
+
+	if obj.objType != ObjectTypeHash {
+		return nil, nil, find, ErrorInvalidObjectType
+	}
+
+	res := obj.value.(*core.Hash)
+	return res, obj, find, nil
 }
 
 func (t *Db) Put(key *core.String, obj *Object) {
