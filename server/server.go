@@ -71,6 +71,10 @@ func (t *StandardServer) initCommands() {
 
 	cm.add("sadd", CommandSAdd)
 	cm.add("scard", CommandSCard)
+	cm.add("sismember", CommandSIsMember)
+	cm.add("smembers", CommandSMembers)
+	cm.add("smismember", CommandSMIsMember)
+	cm.add("srem", CommandSRem)
 
 	t.cm = cm
 }

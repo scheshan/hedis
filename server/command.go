@@ -385,7 +385,7 @@ func CommandHGetAll(s *Session, args []*core.String) codec.Message {
 }
 
 func CommandHKeys(s *Session, args []*core.String) codec.Message {
-	if len(args) < 1 {
+	if len(args) != 1 {
 		return MessageErrorInvalidArgNum
 	}
 
@@ -538,6 +538,84 @@ func CommandSAdd(s *Session, args []*core.String) codec.Message {
 func CommandSCard(s *Session, args []*core.String) codec.Message {
 	return CommandHLen(s, args)
 }
+
+func CommandSIsMember(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	field := args[1]
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	if find && ht.Contains(field) {
+		return codec.NewInteger(1)
+	}
+
+	return codec.NewInteger(0)
+}
+
+func CommandSMembers(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	return CommandHKeys(s, args)
+}
+
+func CommandSMIsMember(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	fields := args[1:]
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	res := codec.NewArraySize(len(fields))
+	for i := 0; i < len(fields); i++ {
+		if find && ht.Contains(fields[i]) {
+			res.AppendMessage(codec.NewInteger(1))
+		} else {
+			res.AppendMessage(codec.NewInteger(0))
+		}
+	}
+
+	return res
+}
+
+func CommandSRem(s *Session, args []*core.String) codec.Message {
+	if len(args) != 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	fields := args[1:]
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	num := 0
+	for _, field := range fields {
+		if find && ht.Remove(field) {
+			num++
+		}
+	}
+
+	return codec.NewInteger(num)
+}
+
+//TODO sdiff, sdiffstore, sinter, sinterstore, smove, spop, srandmember, sscan, sunion, sunionstore
 
 /**  set commands end  **/
 
