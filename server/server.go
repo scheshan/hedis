@@ -57,6 +57,8 @@ func (t *StandardServer) initCommands() {
 
 	cm.add("hset", CommandHSet)
 	cm.add("hexists", CommandHExists)
+	cm.add("hget", CommandHGet)
+	cm.add("hgetall", CommandHGetAll)
 
 	t.cm = cm
 }

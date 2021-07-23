@@ -324,7 +324,28 @@ func CommandHGet(s *Session, args []*core.String) codec.Message {
 }
 
 func CommandHGetAll(s *Session, args []*core.String) codec.Message {
+	if len(args) < 1 {
+		return MessageErrorInvalidArgNum
+	}
 
+	key := args[0]
+	obj, find := s.Db().Get(key)
+	if !find {
+		return codec.NewArrayEmpty()
+	}
+
+	if obj.objType != ObjectTypeHash {
+		return MessageErrorInvalidObjectType
+	}
+
+	ht := obj.value.(*core.Hash)
+	msg := codec.NewArraySize(ht.Size())
+	ht.Iterate(func(k *core.String, v interface{}) {
+		msg.AppendStr(k)
+		msg.AppendStr(v.(*core.String))
+	})
+
+	return msg
 }
 
 /**  hash commands end  **/

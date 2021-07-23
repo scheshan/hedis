@@ -248,6 +248,10 @@ func (t *Hash) Iterate(hashFunc HashFunc) {
 	}
 }
 
+func (t *Hash) Size() int {
+	return t.size
+}
+
 func NewHashSize(size int) *Hash {
 	h := &Hash{}
 

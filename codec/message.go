@@ -205,9 +205,13 @@ func NewInteger(num int) *Integer {
 	return i
 }
 
-func NewArray(num int) *Array {
+func NewArraySize(num int) *Array {
 	arr := &Array{}
 	arr.messages = make([]Message, 0, num)
 
 	return arr
+}
+
+func NewArrayEmpty() *Array {
+	return NewArraySize(0)
 }
