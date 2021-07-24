@@ -262,3 +262,7 @@ func NewHashSize(size int) *Hash {
 
 	return h
 }
+
+func NewHash() *Hash {
+	return NewHashSize(16)
+}

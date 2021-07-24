@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"hedis/codec"
+	"hedis/core"
 	"io"
 	"log"
 	"net"
@@ -13,24 +14,36 @@ import (
 type SessionCloseFunc func(s *Session)
 
 const (
-	SessionFlagPubSub = 1
+	SessionFlagPubSub   = 1
+	SessionFlagBlocking = 2
 )
 
 type Session struct {
-	id        int
-	conn      *net.TCPConn
-	server    Server
-	db        *Db
-	auth      bool
-	pre       *Session
-	next      *Session
-	reader    *bufio.Reader
-	writer    *bufio.Writer
-	state     int
-	closeFunc SessionCloseFunc
-	messages  chan codec.Message
-	running   bool
-	flag      int
+	id           int
+	conn         *net.TCPConn
+	server       Server
+	db           *Db
+	auth         bool
+	pre          *Session
+	next         *Session
+	reader       *bufio.Reader
+	writer       *bufio.Writer
+	closeFunc    SessionCloseFunc
+	messages     chan codec.Message
+	running      bool
+	flag         int
+	subscription *core.Hash
+}
+
+func (t *Session) canProcessMessage() bool {
+	if t.flag&SessionFlagPubSub == SessionFlagPubSub {
+		return false
+	}
+	if t.flag&SessionFlagBlocking == SessionFlagBlocking {
+		return false
+	}
+
+	return true
 }
 
 func (t *Session) Id() int {
@@ -81,14 +94,6 @@ func (t *Session) Writer() *bufio.Writer {
 	return t.writer
 }
 
-func (t *Session) State() int {
-	return t.state
-}
-
-func (t *Session) SetState(state int) {
-	t.state = state
-}
-
 func (t *Session) CloseFunc() SessionCloseFunc {
 	return t.closeFunc
 }
@@ -106,6 +111,7 @@ func NewSession(id int, conn *net.TCPConn, server Server) *Session {
 	s.writer = bufio.NewWriter(conn)
 	s.server = server
 	s.messages = make(chan codec.Message, 1024)
+	s.subscription = core.NewHash()
 
 	log.Printf("新连接建立: %v", conn.RemoteAddr())
 
@@ -139,6 +145,17 @@ func (t *Session) processRequest() {
 		if err != nil {
 			t.handleError(err)
 			return
+		}
+		if t.flag&SessionFlagPubSub == SessionFlagPubSub {
+			str := msg.Command().String()
+
+			if str != "subscribe" && str != "psubscribe" && str != "unsubscribe" && str != "punsubscribe" && str != "ping" && str != "quit" {
+				continue
+			}
+		}
+
+		if t.flag&SessionFlagBlocking == SessionFlagBlocking {
+			continue
 		}
 
 		t.server.QueueCommand(t, msg.Command(), msg.Args())

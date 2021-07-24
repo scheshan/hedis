@@ -13,16 +13,29 @@ type Server interface {
 	Db(db int) (*Db, error)
 }
 
+//region BaseServer
+
+type BaseServer struct {
+	cm            *Commands
+	config        *ServerConfig
+	listener      net.Listener
+	session       *Session
+	running       bool
+	clientId      int
+	requests      chan *CommandContext
+	subscription  *core.Hash
+	pSubscription *core.List
+}
+
+func (t *BaseServer) Subscribe(s *Session, topic *core.String) {
+
+}
+
+//endregion
+
 type StandardServer struct {
-	cm       *Commands
-	config   *ServerConfig
-	listener net.Listener
-	session  *Session
-	running  bool
-	clientId int
-	requests chan *CommandContext
-	subs     *core.Hash
-	db       []*Db
+	*BaseServer
+	db []*Db
 }
 
 func NewStandard(c *ServerConfig) Server {
@@ -98,7 +111,7 @@ func (t *StandardServer) initDb() {
 }
 
 func (t *StandardServer) initPubSub() {
-	t.subs = core.NewHashSize(100)
+	t.subscription = core.NewHash()
 }
 
 func (t *StandardServer) accept() {
@@ -182,10 +195,6 @@ func (t *StandardServer) Stop() error {
 }
 
 func (t *StandardServer) QueueCommand(session *Session, name *core.String, args []*core.String) {
-	if (session.state & SessionFlagPubSub) == SessionFlagPubSub {
-		return
-	}
-
 	ctx := &CommandContext{}
 	ctx.session = session
 	ctx.name = name
