@@ -22,7 +22,7 @@ var MessageErrorInvalidObjectType = codec.NewErrorErr(ErrorInvalidObjectType)
 var MessageSimpleOK = codec.NewSimpleString("ok")
 var MessageSimpleNil = codec.NewSimpleStr(nil)
 
-/**  connection commands start  **/
+//region connection commands
 
 func CommandPing(s *Session, args []*core.String) codec.Message {
 	var msg codec.Message
@@ -71,9 +71,9 @@ func CommandSelect(s *Session, args []*core.String) codec.Message {
 	return MessageSimpleOK
 }
 
-/**  connection commands end  **/
+//endregion
 
-/**  string commands start  **/
+//region string commands
 
 func CommandSet(s *Session, args []*core.String) codec.Message {
 	if len(args) < 2 {
@@ -253,9 +253,9 @@ func CommandDecrBy(s *Session, args []*core.String) codec.Message {
 	return commandIncrBy(s, key, -num)
 }
 
-/**  string commands end  **/
+//endregion
 
-/**  keys commands start  **/
+// region keys commands
 
 func CommandDel(s *Session, args []*core.String) codec.Message {
 	if len(args) == 0 {
@@ -287,9 +287,9 @@ func CommandExists(s *Session, args []*core.String) codec.Message {
 	return codec.NewInteger(res)
 }
 
-/**  keys commands end  **/
+// endregion
 
-/**  hash commands start  **/
+//region hash commands
 
 func CommandHSet(s *Session, args []*core.String) codec.Message {
 	if len(args) < 3 {
@@ -535,9 +535,9 @@ func CommandHDel(s *Session, args []*core.String) codec.Message {
 
 //TODO hincrbyfloat, hrandfield, hcan, hsetnx, hstrlen, hvals
 
-/**  hash commands end  **/
+//endregion
 
-/**  set commands start  **/
+//region set commands
 
 func CommandSAdd(s *Session, args []*core.String) codec.Message {
 	if len(args) != 2 {
@@ -623,7 +623,7 @@ func CommandSRem(s *Session, args []*core.String) codec.Message {
 
 //TODO sdiff, sdiffstore, sinter, sinterstore, smove, spop, srandmember, sscan, sunion, sunionstore
 
-/**  set commands end  **/
+//endregion
 
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
