@@ -86,6 +86,38 @@ func (t *Db) GetHash(key *core.String) (*core.Hash, *Object, bool, error) {
 	return res, obj, find, nil
 }
 
+func (t *Db) GetListOrCreate(key *core.String) (*core.List, *Object, bool, error) {
+	var res *core.List
+
+	obj, find := t.Get(key)
+	if !find {
+		res = core.NewList()
+		obj := NewObject(ObjectTypeList, res)
+		t.Put(key, obj)
+	} else {
+		if obj.objType != ObjectTypeList {
+			return nil, nil, find, ErrorInvalidObjectType
+		}
+		res = obj.value.(*core.List)
+	}
+
+	return res, obj, find, nil
+}
+
+func (t *Db) GetList(key *core.String) (*core.List, *Object, bool, error) {
+	obj, find := t.Get(key)
+	if !find {
+		return nil, nil, find, nil
+	}
+
+	if obj.objType != ObjectTypeList {
+		return nil, nil, find, ErrorInvalidObjectType
+	}
+
+	res := obj.value.(*core.List)
+	return res, obj, find, nil
+}
+
 func (t *Db) Put(key *core.String, obj *Object) {
 	t.ht.Put(key, obj)
 }

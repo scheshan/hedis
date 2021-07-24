@@ -625,6 +625,168 @@ func CommandSRem(s *Session, args []*core.String) codec.Message {
 
 //endregion
 
+//region list commands
+
+func CommandLLen(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+
+	list, _, find, err := s.Db().GetList(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	num := 0
+	if find {
+		num = list.Len()
+	}
+
+	return codec.NewInteger(num)
+}
+
+func CommandLPush(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	values := args[1:]
+
+	list, _, _, err := s.Db().GetListOrCreate(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	for _, v := range values {
+		list.AddHead(v)
+	}
+
+	return codec.NewInteger(list.Len())
+}
+
+func CommandLPushX(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	values := args[1:]
+
+	list, _, find, err := s.Db().GetList(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	num := 0
+	if find {
+		for _, v := range values {
+			list.AddHead(v)
+		}
+		num = list.Len()
+	}
+
+	return codec.NewInteger(num)
+}
+
+func CommandLPop(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+
+	list, _, find, err := s.Db().GetList(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	var str *core.String
+	if find {
+		v, li, find := list.GetHead()
+		if find {
+			str = v.(*core.String)
+			list.Remove(li)
+		}
+	}
+
+	return codec.NewBulkStr(str)
+}
+
+func CommandRPop(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+
+	list, _, find, err := s.Db().GetList(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	var str *core.String
+	if find {
+		v, li, find := list.GetTail()
+		if find {
+			str = v.(*core.String)
+			list.Remove(li)
+		}
+	}
+
+	return codec.NewBulkStr(str)
+}
+
+func CommandRPush(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	values := args[1:]
+
+	list, _, _, err := s.Db().GetListOrCreate(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	for _, v := range values {
+		list.AddTail(v)
+	}
+
+	return codec.NewInteger(list.Len())
+}
+
+func CommandRPushX(s *Session, args []*core.String) codec.Message {
+	if len(args) < 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+	values := args[1:]
+
+	list, _, find, err := s.Db().GetList(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	num := 0
+	if find {
+		for _, v := range values {
+			list.AddTail(v)
+		}
+		num = list.Len()
+	}
+
+	return codec.NewInteger(num)
+}
+
+//TODO blpop, brpop, brpoplpush, blmove, lindex, linsert, lpos, lrange, lrem, lset, ltrim, rpoplpush, lmove
+
+//endregion
+
 func CommandNotFound(s *Session, args []*core.String) codec.Message {
 	msg := codec.NewErrorString("Command not supported")
 

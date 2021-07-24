@@ -77,6 +77,14 @@ func (t *StandardServer) initCommands() {
 	cm.add("smismember", CommandSMIsMember)
 	cm.add("srem", CommandSRem)
 
+	cm.add("llen", CommandLLen)
+	cm.add("lpush", CommandLPush)
+	cm.add("lpushx", CommandLPushX)
+	cm.add("lpop", CommandLPop)
+	cm.add("rpop", CommandRPop)
+	cm.add("rpush", CommandRPush)
+	cm.add("rpushx", CommandRPushX)
+
 	t.cm = cm
 }
 
