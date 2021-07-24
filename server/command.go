@@ -21,6 +21,7 @@ var MessageErrorInvalidArgNum = codec.NewErrorString("ERR wrong number of argume
 var MessageErrorInvalidObjectType = codec.NewErrorErr(ErrorInvalidObjectType)
 var MessageSimpleOK = codec.NewSimpleString("ok")
 var MessageSimpleNil = codec.NewSimpleStr(nil)
+var MessageBulkNil = codec.NewBulkStr(nil)
 
 //region connection commands
 
@@ -619,6 +620,43 @@ func CommandSMIsMember(s *Session, args []*core.String) codec.Message {
 
 func CommandSRem(s *Session, args []*core.String) codec.Message {
 	return CommandHDel(s, args)
+}
+
+func CommandSRandMember(s *Session, args []*core.String) codec.Message {
+	if len(args) < 1 || len(args) > 2 {
+		return MessageErrorInvalidArgNum
+	}
+
+	key := args[0]
+
+	ht, _, find, err := s.Db().GetHash(key)
+	if err != nil {
+		return codec.NewErrorErr(err)
+	}
+
+	if len(args) == 1 {
+		var str *core.String
+		if find {
+			str, _, _ = ht.Random()
+		}
+		return codec.NewBulkStr(str)
+	} else {
+		arg := args[1]
+		num, err := arg.ToInt()
+		if err != nil {
+			return codec.NewErrorErr(err)
+		}
+
+		arr := codec.NewArraySize(num)
+		for i := 0; i < num; i++ {
+			var str *core.String
+			if find {
+				str, _, _ = ht.Random()
+			}
+			arr.AppendStr(str)
+		}
+		return arr
+	}
 }
 
 //TODO sdiff, sdiffstore, sinter, sinterstore, smove, spop, srandmember, sscan, sunion, sunionstore

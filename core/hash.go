@@ -1,5 +1,7 @@
 package core
 
+import "math/rand"
+
 const maxHashTableSize = 1 << 30
 const maxHashSize = 1 << 31
 
@@ -172,6 +174,24 @@ func (t *Hash) iterateTable(table []*hashItem, hashFunc HashFunc) {
 	}
 }
 
+func (t *Hash) randomItem(head *hashItem) *hashItem {
+	num := 0
+	cur := head
+	for cur != nil {
+		num++
+		cur = cur.next
+	}
+
+	num = rand.Intn(num)
+	cur = head
+	for num > 0 {
+		cur = cur.next
+		num--
+	}
+
+	return cur
+}
+
 func (t *Hash) Contains(key *String) bool {
 	t.transfer()
 
@@ -250,6 +270,32 @@ func (t *Hash) Iterate(hashFunc HashFunc) {
 
 func (t *Hash) Size() int {
 	return t.size
+}
+
+func (t *Hash) Random() (key *String, value interface{}, find bool) {
+	if t.size == 0 {
+		return nil, nil, false
+	}
+
+	var head *hashItem
+	if t.isTransferring() {
+		for head == nil {
+			ind := t.tIndex + rand.Intn(len(t.t1)+len(t.t2)-t.tIndex)
+			if ind < len(t.t1) {
+				head = t.t1[ind]
+			} else {
+				head = t.t2[ind-len(t.t1)]
+			}
+		}
+	} else {
+		for head == nil {
+			ind := rand.Intn(len(t.t1))
+			head = t.t1[ind]
+		}
+	}
+	hi := t.randomItem(head)
+
+	return hi.key, hi.value, true
 }
 
 func NewHashSize(size int) *Hash {

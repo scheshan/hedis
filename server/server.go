@@ -90,6 +90,7 @@ func (t *StandardServer) initCommands() {
 	cm.add("smembers", CommandSMembers)
 	cm.add("smismember", CommandSMIsMember)
 	cm.add("srem", CommandSRem)
+	cm.add("srandmember", CommandSRandMember)
 
 	cm.add("llen", CommandLLen)
 	cm.add("lpush", CommandLPush)
