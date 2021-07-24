@@ -40,6 +40,7 @@ type StandardServer struct {
 
 func NewStandard(c *ServerConfig) Server {
 	server := &StandardServer{}
+	server.BaseServer = &BaseServer{}
 	server.config = c
 	server.requests = make(chan *CommandContext, 102400)
 
