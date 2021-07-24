@@ -659,7 +659,7 @@ func CommandSRandMember(s *Session, args []*core.String) codec.Message {
 	}
 }
 
-//TODO sdiff, sdiffstore, sinter, sinterstore, smove, spop, srandmember, sscan, sunion, sunionstore
+//TODO sdiff, sdiffstore, sinter, sinterstore, smove, spop, sscan, sunion, sunionstore
 
 //endregion
 
