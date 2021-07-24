@@ -5,7 +5,8 @@ import (
 )
 
 type Db struct {
-	ht *core.Hash
+	ht           *core.Hash
+	listBlocking *core.Hash
 }
 
 func (t *Db) Get(key *core.String) (*Object, bool) {
@@ -130,9 +131,33 @@ func (t *Db) Exists(key *core.String) bool {
 	return t.ht.Contains(key)
 }
 
+func (t *Db) AddListBlocking(s *Session, keys ...*core.String) {
+	for _, key := range keys {
+		v, find := t.listBlocking.Get(key)
+		if !find {
+			list := core.NewList()
+			v = list
+			t.listBlocking.Put(key, v)
+		}
+
+		v.(*core.List).AddHead(s)
+	}
+}
+
+func (t *Db) RemoveListBlocking(s *Session, keys ...*core.String) {
+	for _, key := range keys {
+		v, _ := t.listBlocking.Get(key)
+		list := v.(*core.List)
+		list.RemoveFilter(func(v interface{}) bool {
+			return v == s
+		})
+	}
+}
+
 func NewDb() *Db {
 	db := &Db{}
-	db.ht = core.NewHashSize(16)
+	db.ht = core.NewHash()
+	db.listBlocking = core.NewHash()
 
 	return db
 }

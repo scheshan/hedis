@@ -98,6 +98,15 @@ func (t *List) Filter(filter ListFilter) (interface{}, *ListItem, bool) {
 	return nil, nil, false
 }
 
+func (t *List) RemoveFilter(filter ListFilter) bool {
+	_, li, find := t.Filter(filter)
+	if find {
+		t.Remove(li)
+	}
+
+	return find
+}
+
 func NewList() *List {
 	return &List{}
 }

@@ -33,6 +33,7 @@ type Session struct {
 	running      bool
 	flag         int
 	subscription *core.Hash
+	listBlocking *core.Hash
 }
 
 func (t *Session) canProcessMessage() bool {
@@ -112,6 +113,7 @@ func NewSession(id int, conn *net.TCPConn, server Server) *Session {
 	s.server = server
 	s.messages = make(chan codec.Message, 1024)
 	s.subscription = core.NewHash()
+	s.listBlocking = core.NewHash()
 
 	log.Printf("新连接建立: %v", conn.RemoteAddr())
 
@@ -196,6 +198,12 @@ func (t *Session) SelectDb(dbNum int) error {
 
 	t.db = db
 	return nil
+}
+
+func (t *Session) AddListBlocking(keys ...*core.String) {
+	for _, key := range keys {
+		t.listBlocking.Put(key, core.HashDefaultValue)
+	}
 }
 
 func (t *Session) Close() error {

@@ -821,6 +821,34 @@ func CommandRPushX(s *Session, args []*core.String) codec.Message {
 	return codec.NewInteger(num)
 }
 
+func CommandBLPop(s *Session, args []*core.String) codec.Message {
+	if len(args) != 1 {
+		return MessageErrorInvalidArgNum
+	}
+
+	keys := args[1:]
+
+	for _, key := range keys {
+		list, _, find, err := s.Db().GetList(key)
+		if err != nil {
+			return codec.NewErrorErr(err)
+		}
+
+		if find && list.Len() > 0 {
+			v, li, _ := list.GetHead()
+			list.Remove(li)
+
+			return codec.NewBulkStr(v.(*core.String))
+		}
+	}
+
+	s.flag |= SessionFlagBlocking
+	s.Db().AddListBlocking(s, keys...)
+	s.AddListBlocking(keys...)
+
+	return nil
+}
+
 //TODO blpop, brpop, brpoplpush, blmove, lindex, linsert, lpos, lrange, lrem, lset, ltrim, rpoplpush, lmove
 
 //endregion
