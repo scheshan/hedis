@@ -1,5 +1,7 @@
 package core
 
+type ListFilter func(value interface{}) bool
+
 type List struct {
 	size int
 	head *ListItem
@@ -83,6 +85,17 @@ func (t *List) Remove(item *ListItem) {
 
 func (t *List) Len() int {
 	return t.size
+}
+
+func (t *List) Filter(filter ListFilter) (interface{}, *ListItem, bool) {
+	cur := t.head
+	for cur != nil {
+		if filter(cur.value) {
+			return cur.value, cur, true
+		}
+	}
+
+	return nil, nil, false
 }
 
 func NewList() *List {
