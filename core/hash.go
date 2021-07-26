@@ -94,7 +94,7 @@ func (t *Hash) transfer() {
 	if t.tIndex < len(t.t1) {
 		cur := t.t1[t.tIndex]
 		for cur != nil {
-			ind := cur.hash&len(t.t2) - 1
+			ind := cur.hash & (len(t.t2) - 1)
 
 			next := cur.next
 
