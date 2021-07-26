@@ -1,7 +1,5 @@
 package hedis
 
-import "time"
-
 type Db struct {
 	ht           *Hash
 	expires      *Hash
@@ -19,8 +17,7 @@ func (t *Db) Get(key *String) (*Object, bool) {
 		return nil, ok
 	}
 
-	now := time.Now().Unix()
-	if o.ttl > 0 && now > o.ttl {
+	if o.Expired() {
 		t.Remove(key)
 		return nil, false
 	}
@@ -129,7 +126,11 @@ func (t *Db) Put(key *String, obj *Object) {
 }
 
 func (t *Db) Remove(key *String) bool {
-	return t.ht.Remove(key)
+	b := t.ht.Remove(key)
+
+	t.expires.Remove(key)
+
+	return b
 }
 
 func (t *Db) Exists(key *String) bool {

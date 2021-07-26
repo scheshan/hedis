@@ -20,6 +20,8 @@ func (t *StandardServer) PostInit() {
 
 func (t *StandardServer) PreStart() {
 	t.baseServer.PreStart()
+
+	go t.cleanTimeoutKeys()
 }
 
 func (t *StandardServer) PostStart() {
@@ -116,6 +118,30 @@ func (t *StandardServer) changeSessionDb(s *Session, db int) error {
 
 	s.db = t.db[db]
 	return nil
+}
+
+func (t *StandardServer) cleanTimeoutKeys() {
+	num := 10
+
+	for t.running {
+		<-time.After(time.Second * 10)
+
+		for _, db := range t.db {
+			if db.expires.Empty() {
+				continue
+			}
+
+			for i := 0; i < num; i++ {
+				key, value, find := db.expires.Random()
+				if find {
+					obj := value.(*Object)
+					if obj.Expired() {
+						db.Remove(key)
+					}
+				}
+			}
+		}
+	}
 }
 
 //#region server commands
@@ -378,6 +404,7 @@ func (t *StandardServer) CommandExpire(s *Session, args []*String) Message {
 	dur := time.Second * time.Duration(sec)
 	expire := time.Now().Add(dur)
 	obj.ttl = expire.Unix()
+	s.db.expires.Put(key, obj)
 
 	return IntegerOne
 }

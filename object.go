@@ -1,5 +1,7 @@
 package hedis
 
+import "time"
+
 type ObjectType int
 
 const (
@@ -12,6 +14,10 @@ type Object struct {
 	objType ObjectType
 	value   interface{}
 	ttl     int64
+}
+
+func (t *Object) Expired() bool {
+	return t.ttl > 0 && time.Now().Unix() > t.ttl
 }
 
 func NewObject(t ObjectType, v interface{}) *Object {

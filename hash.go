@@ -298,6 +298,10 @@ func (t *Hash) Random() (key *String, value interface{}, find bool) {
 	return hi.key, hi.value, true
 }
 
+func (t *Hash) Empty() bool {
+	return t.size == 0
+}
+
 func NewHashSize(size int) *Hash {
 	h := &Hash{}
 
