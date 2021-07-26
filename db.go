@@ -1,4 +1,4 @@
-package server
+package hedis
 
 type Db struct {
 	ht           *Hash

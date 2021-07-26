@@ -1,13 +1,13 @@
 package main
 
 import (
-	"hedis/server"
+	"hedis"
 	"log"
 	"time"
 )
 
 func main() {
-	srv := server.NewStandardServer(nil)
+	srv := hedis.NewStandardServer(nil)
 
 	err := srv.Start()
 	if err != nil {
