@@ -30,9 +30,9 @@ func (t *StandardServer) PreStop() {
 }
 
 func (t *StandardServer) SessionCreated(s *Session) {
-	t.baseServer.SessionCreated(s)
-
 	t.changeSessionDb(s, 0)
+
+	t.baseServer.SessionCreated(s)
 }
 
 func (t *StandardServer) SessionError(s *Session, err error) {
@@ -60,6 +60,8 @@ func (t *StandardServer) initDb() {
 }
 
 func (t *StandardServer) initCommands() {
+	t.addCommand("dbsize", t.CommandDbSize)
+
 	t.addCommand("select", t.CommandSelect)
 
 	t.addCommand("set", t.CommandSet)
@@ -113,6 +115,15 @@ func (t *StandardServer) changeSessionDb(s *Session, db int) error {
 	s.db = t.db[db]
 	return nil
 }
+
+//#region server commands
+
+func (t *StandardServer) CommandDbSize(s *Session, args []*String) Message {
+	num := s.db.ht.Size()
+	return NewInteger(num)
+}
+
+//endregion
 
 //#region connection commands
 
