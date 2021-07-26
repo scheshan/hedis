@@ -9,6 +9,8 @@ import (
 )
 
 var InvalidMessage = errors.New("invalid message")
+var ErrorCommandNotFound = NewErrorString("Command not supported")
+var SimpleOK = NewSimpleString("ok")
 
 type Message interface {
 	Command() *core.String

@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	srv := server.NewStandard(nil)
+	srv := server.NewStandardServer(nil)
 
-	err := srv.Run()
+	err := srv.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
