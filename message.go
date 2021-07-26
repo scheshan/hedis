@@ -144,7 +144,11 @@ func (t *Inline) Command() *String {
 }
 
 func (t *Inline) Args() []*String {
-	return t.args[1:]
+	if len(t.args) > 1 {
+		return t.args[1:]
+	}
+
+	return nil
 }
 
 func (t *Inline) ToString() *String {

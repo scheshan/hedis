@@ -96,10 +96,10 @@ func NewStringEmpty() *String {
 }
 
 func NewStringMinSize() *String {
-	return NewString(16)
+	return NewStringSize(16)
 }
 
-func NewString(size int) *String {
+func NewStringSize(size int) *String {
 	str := &String{}
 	str.buf = make([]byte, 0, size)
 

@@ -161,6 +161,8 @@ func (t *baseServer) writeToSession(session *Session, msg Message) error {
 }
 
 func (t *baseServer) readLoop(session *Session) {
+	var ch byte = 0b00100000
+
 	for t.running && session.state == SessionStateConnected {
 		msg, err := t.decoder.Decode(session.reader)
 		if err != nil {
@@ -171,6 +173,10 @@ func (t *baseServer) readLoop(session *Session) {
 		cm := &ClientMessage{}
 		cm.session = session
 		cm.message = msg
+
+		for i, _ := range msg.Command().buf {
+			msg.Command().buf[i] |= ch
+		}
 
 		t.requests <- cm
 	}

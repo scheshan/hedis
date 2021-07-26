@@ -65,7 +65,7 @@ func (t *Decoder) readMessage(reader *bufio.Reader) (Message, error) {
 	case '*':
 		return t.readArray(reader)
 	default:
-		return t.readInline(reader)
+		return t.readInline(reader, b)
 	}
 }
 
@@ -158,7 +158,7 @@ func (t *Decoder) readBulk(reader *bufio.Reader) (*String, error) {
 		}
 		str = NewStringEmpty()
 	} else {
-		str = NewString(num)
+		str = NewStringSize(num)
 
 		for str.Len() < num {
 			require := num - str.Len()
@@ -213,10 +213,11 @@ func (t *Decoder) readArray(reader *bufio.Reader) (*Array, error) {
 	return arr, nil
 }
 
-func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
+func (t *Decoder) readInline(reader *bufio.Reader, b byte) (*Inline, error) {
 	inline := &Inline{}
 
-	arg := NewStringEmpty()
+	arg := NewStringMinSize()
+	arg.AppendByte(b)
 	inline.args = append(inline.args, arg)
 
 	finish := false
