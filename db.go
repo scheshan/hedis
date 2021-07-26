@@ -1,7 +1,10 @@
 package hedis
 
+import "time"
+
 type Db struct {
 	ht           *Hash
+	expires      *Hash
 	listBlocking *Hash
 }
 
@@ -14,6 +17,12 @@ func (t *Db) Get(key *String) (*Object, bool) {
 	o, ok := i.(*Object)
 	if !ok {
 		return nil, ok
+	}
+
+	now := time.Now().Unix()
+	if o.ttl > 0 && now > o.ttl {
+		t.Remove(key)
+		return nil, false
 	}
 
 	return o, true

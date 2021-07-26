@@ -11,7 +11,7 @@ const (
 type Object struct {
 	objType ObjectType
 	value   interface{}
-	ttl     int
+	ttl     int64
 }
 
 func NewObject(t ObjectType, v interface{}) *Object {

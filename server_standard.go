@@ -2,6 +2,7 @@ package hedis
 
 import (
 	"errors"
+	"time"
 )
 
 type StandardServer struct {
@@ -77,6 +78,7 @@ func (t *StandardServer) initCommands() {
 
 	t.addCommand("del", t.CommandDel)
 	t.addCommand("exists", t.CommandExists)
+	t.addCommand("expire", t.CommandExpire)
 
 	t.addCommand("hset", t.CommandHSet)
 	t.addCommand("hexists", t.CommandHExists)
@@ -355,6 +357,29 @@ func (t *StandardServer) CommandExists(s *Session, args []*String) Message {
 	}
 
 	return NewInteger(res)
+}
+
+func (t *StandardServer) CommandExpire(s *Session, args []*String) Message {
+	if len(args) < 2 {
+		return ErrorInvalidArgNum
+	}
+
+	key := args[0]
+	sec, err := args[1].ToInt()
+	if err != nil {
+		return NewErrorErr(err)
+	}
+
+	obj, find := s.db.Get(key)
+	if !find {
+		return IntegerZero
+	}
+
+	dur := time.Second * time.Duration(sec)
+	expire := time.Now().Add(dur)
+	obj.ttl = expire.Unix()
+
+	return IntegerOne
 }
 
 // endregion

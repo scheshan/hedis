@@ -15,6 +15,9 @@ var SimpleNil = NewSimpleStr(nil)
 
 var BulkNil = NewBulkStr(nil)
 
+var IntegerZero = NewInteger(0)
+var IntegerOne = NewInteger(1)
+
 var ErrorCommandNotFound = NewErrorString("Command not supported")
 var ErrorInvalidArgNum = NewErrorString("ERR wrong number of arguments for this command")
 var ErrorInvalidObjectType = NewErrorErr(ErrInvalidObjectType)
