@@ -1,9 +1,8 @@
-package codec
+package server
 
 import (
 	"bufio"
 	"errors"
-	"hedis/core"
 	"strconv"
 )
 
@@ -33,7 +32,7 @@ func (t *Encoder) Encode(writer *bufio.Writer, message Message) error {
 	return err
 }
 
-func (t *Encoder) encodeLine(writer *bufio.Writer, prefix string, str *core.String) error {
+func (t *Encoder) encodeLine(writer *bufio.Writer, prefix string, str *String) error {
 	_, err := writer.WriteString(prefix)
 	if err != nil {
 		return err

@@ -1,36 +1,43 @@
-package codec
+package server
 
 import (
 	"bufio"
 	"bytes"
 	"errors"
-	"hedis/core"
 	"strconv"
 )
 
-var InvalidMessage = errors.New("invalid message")
-var ErrorCommandNotFound = NewErrorString("Command not supported")
+var ErrInvalidMessage = errors.New("invalid message")
+var ErrInvalidObjectType = errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")
+
 var SimpleOK = NewSimpleString("ok")
+var SimpleNil = NewSimpleStr(nil)
+
+var BulkNil = NewBulkStr(nil)
+
+var ErrorCommandNotFound = NewErrorString("Command not supported")
+var ErrorInvalidArgNum = NewErrorString("ERR wrong number of arguments for this command")
+var ErrorInvalidObjectType = NewErrorErr(ErrInvalidObjectType)
 
 type Message interface {
-	Command() *core.String
-	Args() []*core.String
-	ToString() *core.String
+	Command() *String
+	Args() []*String
+	ToString() *String
 }
 
 type Simple struct {
-	str *core.String
+	str *String
 }
 
-func (t *Simple) Command() *core.String {
+func (t *Simple) Command() *String {
 	return t.str
 }
 
-func (t *Simple) Args() []*core.String {
+func (t *Simple) Args() []*String {
 	return nil
 }
 
-func (t *Simple) ToString() *core.String {
+func (t *Simple) ToString() *String {
 	return t.str
 }
 
@@ -38,47 +45,47 @@ type Integer struct {
 	num int
 }
 
-func (t *Integer) Command() *core.String {
+func (t *Integer) Command() *String {
 	return nil
 }
 
-func (t *Integer) Args() []*core.String {
+func (t *Integer) Args() []*String {
 	return nil
 }
 
-func (t *Integer) ToString() *core.String {
-	return core.NewStringStr(strconv.Itoa(t.num))
+func (t *Integer) ToString() *String {
+	return NewStringStr(strconv.Itoa(t.num))
 }
 
 type Error struct {
-	str *core.String
+	str *String
 }
 
-func (t *Error) Command() *core.String {
+func (t *Error) Command() *String {
 	return nil
 }
 
-func (t *Error) Args() []*core.String {
+func (t *Error) Args() []*String {
 	return nil
 }
 
-func (t *Error) ToString() *core.String {
+func (t *Error) ToString() *String {
 	return t.str
 }
 
 type Bulk struct {
-	str *core.String
+	str *String
 }
 
-func (t *Bulk) Command() *core.String {
+func (t *Bulk) Command() *String {
 	return t.str
 }
 
-func (t *Bulk) Args() []*core.String {
+func (t *Bulk) Args() []*String {
 	return nil
 }
 
-func (t *Bulk) ToString() *core.String {
+func (t *Bulk) ToString() *String {
 	return t.str
 }
 
@@ -86,7 +93,7 @@ type Array struct {
 	messages []Message
 }
 
-func (t *Array) Command() *core.String {
+func (t *Array) Command() *String {
 	if len(t.messages) == 0 {
 		return nil
 	}
@@ -99,8 +106,8 @@ func (t *Array) Command() *core.String {
 	return msg.str
 }
 
-func (t *Array) Args() []*core.String {
-	args := make([]*core.String, len(t.messages)-1, len(t.messages)-1)
+func (t *Array) Args() []*String {
+	args := make([]*String, len(t.messages)-1, len(t.messages)-1)
 
 	for i := 1; i < len(t.messages); i++ {
 		args[i-1] = t.messages[i].ToString()
@@ -109,11 +116,11 @@ func (t *Array) Args() []*core.String {
 	return args
 }
 
-func (t *Array) ToString() *core.String {
+func (t *Array) ToString() *String {
 	return nil
 }
 
-func (t *Array) AppendStr(str *core.String) {
+func (t *Array) AppendStr(str *String) {
 	t.messages = append(t.messages, NewBulkStr(str))
 }
 
@@ -122,10 +129,10 @@ func (t *Array) AppendMessage(msg Message) {
 }
 
 type Inline struct {
-	args []*core.String
+	args []*String
 }
 
-func (t *Inline) Command() *core.String {
+func (t *Inline) Command() *String {
 	if len(t.args) > 0 {
 		return t.args[0]
 	}
@@ -133,11 +140,11 @@ func (t *Inline) Command() *core.String {
 	return nil
 }
 
-func (t *Inline) Args() []*core.String {
+func (t *Inline) Args() []*String {
 	return t.args[1:]
 }
 
-func (t *Inline) ToString() *core.String {
+func (t *Inline) ToString() *String {
 	return nil
 }
 
@@ -166,12 +173,12 @@ func EncodeString(message Message) (string, error) {
 
 func NewSimpleString(text string) *Simple {
 	res := &Simple{}
-	res.str = core.NewStringStr(text)
+	res.str = NewStringStr(text)
 
 	return res
 }
 
-func NewSimpleStr(str *core.String) *Simple {
+func NewSimpleStr(str *String) *Simple {
 	res := &Simple{}
 	res.str = str
 
@@ -180,24 +187,24 @@ func NewSimpleStr(str *core.String) *Simple {
 
 func NewErrorString(text string) *Error {
 	res := &Error{}
-	res.str = core.NewStringStr(text)
+	res.str = NewStringStr(text)
 
 	return res
 }
 
 func NewErrorErr(err error) *Error {
 	res := &Error{}
-	res.str = core.NewStringStr(err.Error())
+	res.str = NewStringStr(err.Error())
 
 	return res
 }
 
 func NewBulkString(text string) *Bulk {
-	str := core.NewStringStr(text)
+	str := NewStringStr(text)
 	return NewBulkStr(str)
 }
 
-func NewBulkStr(str *core.String) *Bulk {
+func NewBulkStr(str *String) *Bulk {
 	bulk := &Bulk{}
 	bulk.str = str
 

@@ -1,9 +1,8 @@
-package codec
+package server
 
 import (
 	"bufio"
 	"errors"
-	"hedis/core"
 )
 
 var decoder = &Decoder{}
@@ -70,8 +69,8 @@ func (t *Decoder) readMessage(reader *bufio.Reader) (Message, error) {
 	}
 }
 
-func (t *Decoder) readLine(reader *bufio.Reader) (*core.String, error) {
-	str := core.NewStringEmpty()
+func (t *Decoder) readLine(reader *bufio.Reader) (*String, error) {
+	str := NewStringEmpty()
 
 	finish := false
 
@@ -105,7 +104,7 @@ func (t *Decoder) readSymbol(reader *bufio.Reader) (num int, negative bool, err 
 	} else if b >= '0' && b <= '9' {
 		num = int(b - '0')
 	} else {
-		err = InvalidMessage
+		err = ErrInvalidMessage
 	}
 
 	return
@@ -139,27 +138,27 @@ func (t *Decoder) readInteger(reader *bufio.Reader) (int, error) {
 			}
 			return num, nil
 		} else {
-			return 0, InvalidMessage
+			return 0, ErrInvalidMessage
 		}
 	}
 }
 
-func (t *Decoder) readBulk(reader *bufio.Reader) (*core.String, error) {
+func (t *Decoder) readBulk(reader *bufio.Reader) (*String, error) {
 	num, err := t.readInteger(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	var str *core.String
+	var str *String
 	if num < 0 {
-		str = core.NewStringEmpty()
+		str = NewStringEmpty()
 	} else if num == 0 {
 		if err = t.readCRLF(reader); err != nil {
 			return nil, err
 		}
-		str = core.NewStringEmpty()
+		str = NewStringEmpty()
 	} else {
-		str = core.NewString(num)
+		str = NewString(num)
 
 		for str.Len() < num {
 			require := num - str.Len()
@@ -217,7 +216,7 @@ func (t *Decoder) readArray(reader *bufio.Reader) (*Array, error) {
 func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
 	inline := &Inline{}
 
-	arg := core.NewStringEmpty()
+	arg := NewStringEmpty()
 	inline.args = append(inline.args, arg)
 
 	finish := false
@@ -230,7 +229,7 @@ func (t *Decoder) readInline(reader *bufio.Reader) (*Inline, error) {
 
 		for i := 0; i < len(line); i++ {
 			if line[i] == ' ' {
-				arg = core.NewStringEmpty()
+				arg = NewStringEmpty()
 				inline.args = append(inline.args, arg)
 			} else {
 				arg.AppendByte(line[i])
@@ -260,7 +259,7 @@ func (t *Decoder) readLF(reader *bufio.Reader) error {
 		return err
 	}
 	if b != '\n' {
-		return InvalidMessage
+		return ErrInvalidMessage
 	}
 
 	return nil

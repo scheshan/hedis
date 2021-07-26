@@ -3,17 +3,17 @@ package server
 import (
 	"bufio"
 	"errors"
-	"hedis/codec"
-	"hedis/core"
 	"io"
 	"log"
 	"net"
 	"sync"
 )
 
+type CommandFunc func(s *Session, args []*String) Message
+
 type ClientMessage struct {
 	session *Session
-	message codec.Message
+	message Message
 }
 
 type Server interface {
@@ -40,7 +40,7 @@ type ServerEventHandler interface {
 //此结构包含的事件回调可以参考 ServerEventHandler。由于 baseServer 自己也实现了回调方法，其他服务端结构可以选择性的调用 baseServer
 //的回调方法，实现高度定制化。
 type baseServer struct {
-	commands      *core.Hash
+	commands      *Hash
 	config        *ServerConfig
 	listener      *net.TCPListener
 	session       *Session
@@ -48,10 +48,10 @@ type baseServer struct {
 	clientId      int
 	requests      chan *ClientMessage
 	responses     chan *ClientMessage
-	subscription  *core.Hash
-	pSubscription *core.List
-	decoder       *codec.Decoder
-	encoder       *codec.Encoder
+	subscription  *Hash
+	pSubscription *List
+	decoder       *Decoder
+	encoder       *Encoder
 	mutex         *sync.Mutex
 	srv           ServerEventHandler
 }
@@ -61,13 +61,13 @@ func newBaseServer(config *ServerConfig, srv ServerEventHandler) *baseServer {
 
 	s.srv = srv
 	s.config = config
-	s.commands = core.NewHash()
+	s.commands = NewHash()
 	s.requests = make(chan *ClientMessage, 10240)
 	s.responses = make(chan *ClientMessage, 10240)
-	s.subscription = core.NewHash()
-	s.pSubscription = core.NewList()
-	s.decoder = &codec.Decoder{}
-	s.encoder = &codec.Encoder{}
+	s.subscription = NewHash()
+	s.pSubscription = NewList()
+	s.decoder = &Decoder{}
+	s.encoder = &Encoder{}
 	s.mutex = &sync.Mutex{}
 
 	return s
@@ -114,7 +114,7 @@ func (t *baseServer) initSession(conn *net.TCPConn) *Session {
 	session.conn = conn
 	session.reader = bufio.NewReader(conn)
 	session.writer = bufio.NewWriter(conn)
-	session.messages = make(chan codec.Message, 1024)
+	session.messages = make(chan Message, 1024)
 
 	return session
 }
@@ -151,7 +151,7 @@ func (t *baseServer) closeSession(session *Session) {
 	session.conn.Close()
 }
 
-func (t *baseServer) writeToSession(session *Session, msg codec.Message) error {
+func (t *baseServer) writeToSession(session *Session, msg Message) error {
 	err := t.encoder.Encode(session.writer, msg)
 	if err != nil {
 		return err
@@ -194,17 +194,17 @@ func (t *baseServer) writeLoop(session *Session) {
 	}
 }
 
-func (t *baseServer) getCommand(key *core.String) (Command, bool) {
+func (t *baseServer) getCommand(key *String) (CommandFunc, bool) {
 	v, find := t.commands.Get(key)
 	if !find {
 		return nil, find
 	}
 
-	return v.(Command), find
+	return v.(CommandFunc), find
 }
 
-func (t *baseServer) addCommand(key string, cmd Command) {
-	t.commands.Put(core.NewStringStr(key), cmd)
+func (t *baseServer) addCommand(key string, cmd CommandFunc) {
+	t.commands.Put(NewStringStr(key), cmd)
 }
 
 func (t *baseServer) processCommand() {
@@ -303,23 +303,23 @@ func (t *baseServer) initCommands() {
 	t.addCommand("echo", t.CommandEcho)
 }
 
-func (t *baseServer) CommandNotFound(s *Session, args []*core.String) codec.Message {
-	return codec.ErrorCommandNotFound
+func (t *baseServer) CommandNotFound(s *Session, args []*String) Message {
+	return ErrorCommandNotFound
 }
 
-func (t *baseServer) CommandPing(s *Session, args []*core.String) codec.Message {
-	var msg codec.Message
+func (t *baseServer) CommandPing(s *Session, args []*String) Message {
+	var msg Message
 	if len(args) == 1 {
-		msg = codec.NewSimpleStr(args[0])
+		msg = NewSimpleStr(args[0])
 	} else {
-		msg = codec.NewSimpleString("pong")
+		msg = NewSimpleString("pong")
 	}
 
 	return msg
 }
 
-func (t *baseServer) CommandQuit(s *Session, args []*core.String) codec.Message {
-	msg := codec.SimpleOK
+func (t *baseServer) CommandQuit(s *Session, args []*String) Message {
+	msg := SimpleOK
 	t.writeToSession(s, msg)
 
 	t.closeSession(s)
@@ -327,12 +327,12 @@ func (t *baseServer) CommandQuit(s *Session, args []*core.String) codec.Message 
 	return nil
 }
 
-func (t *baseServer) CommandEcho(s *Session, args []*core.String) codec.Message {
+func (t *baseServer) CommandEcho(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
-	msg := codec.NewBulkStr(args[0])
+	msg := NewBulkStr(args[0])
 
 	return msg
 }

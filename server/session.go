@@ -3,8 +3,6 @@ package server
 import (
 	"bufio"
 	"fmt"
-	"hedis/codec"
-	"hedis/core"
 	"net"
 )
 
@@ -34,11 +32,11 @@ type Session struct {
 	reader       *bufio.Reader
 	writer       *bufio.Writer
 	closeFunc    SessionCloseFunc
-	messages     chan codec.Message
+	messages     chan Message
 	running      bool
 	flag         int
-	subscription *core.Hash
-	listBlocking *core.Hash
+	subscription *Hash
+	listBlocking *Hash
 }
 
 func (t *Session) String() string {

@@ -2,8 +2,6 @@ package server
 
 import (
 	"errors"
-	"hedis/codec"
-	"hedis/core"
 )
 
 type StandardServer struct {
@@ -118,31 +116,31 @@ func (t *StandardServer) changeSessionDb(s *Session, db int) error {
 
 //#region connection commands
 
-func (t *StandardServer) CommandSelect(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSelect(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	dbNum, err := args[0].ToInt()
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	err = t.changeSessionDb(s, dbNum)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	return MessageSimpleOK
+	return SimpleOK
 }
 
 //#endregion
 
 //#region string commands
 
-func (t *StandardServer) CommandSet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSet(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	k := args[0]
@@ -150,33 +148,33 @@ func (t *StandardServer) CommandSet(s *Session, args []*core.String) codec.Messa
 
 	_, obj, find, err := s.db.GetStringOrCreate(k, v)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if find {
 		obj.value = v
 	}
 
-	return codec.NewInteger(1)
+	return NewInteger(1)
 }
 
-func (t *StandardServer) CommandGet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandGet(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 	str, _, _, err := s.db.GetString(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	return codec.NewBulkStr(str)
+	return NewBulkStr(str)
 }
 
-func (t *StandardServer) CommandGetSet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandGetSet(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	k := args[0]
@@ -184,54 +182,54 @@ func (t *StandardServer) CommandGetSet(s *Session, args []*core.String) codec.Me
 
 	str, obj, find, err := s.db.GetString(k)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if !find {
-		return codec.NewBulkStr(nil)
+		return NewBulkStr(nil)
 	}
 
 	obj.value = v
-	return codec.NewBulkStr(str)
+	return NewBulkStr(str)
 }
 
-func (t *StandardServer) CommandGetDel(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandGetDel(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	k := args[0]
 
 	str, _, _, err := s.db.GetString(k)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	s.db.Remove(k)
-	return codec.NewBulkStr(str)
+	return NewBulkStr(str)
 }
 
-func (t *StandardServer) CommandStrLen(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandStrLen(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	k := args[0]
 
 	str, _, _, err := s.db.GetString(k)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if str == nil {
-		return codec.NewInteger(0)
+		return NewInteger(0)
 	}
-	return codec.NewInteger(str.Len())
+	return NewInteger(str.Len())
 }
 
-func (t *StandardServer) CommandAppend(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandAppend(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	k := args[0]
@@ -239,32 +237,32 @@ func (t *StandardServer) CommandAppend(s *Session, args []*core.String) codec.Me
 
 	str, _, find, err := s.db.GetStringOrCreate(k, v)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 	if find {
 		str.AppendStr(v)
 	}
 
-	return codec.NewInteger(str.Len())
+	return NewInteger(str.Len())
 }
 
-func (t *StandardServer) commandIncrBy(s *Session, key *core.String, num int) codec.Message {
-	str, _, _, err := s.db.GetStringOrCreate(key, core.NewStringStr("0"))
+func (t *StandardServer) commandIncrBy(s *Session, key *String, num int) Message {
+	str, _, _, err := s.db.GetStringOrCreate(key, NewStringStr("0"))
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	res, err := str.Incr(num)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	return codec.NewInteger(res)
+	return NewInteger(res)
 }
 
-func (t *StandardServer) CommandIncr(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandIncr(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -272,9 +270,9 @@ func (t *StandardServer) CommandIncr(s *Session, args []*core.String) codec.Mess
 	return t.commandIncrBy(s, key, 1)
 }
 
-func (t *StandardServer) CommandDecr(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandDecr(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -282,9 +280,9 @@ func (t *StandardServer) CommandDecr(s *Session, args []*core.String) codec.Mess
 	return t.commandIncrBy(s, key, -1)
 }
 
-func (t *StandardServer) CommandIncrBy(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandIncrBy(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -292,15 +290,15 @@ func (t *StandardServer) CommandIncrBy(s *Session, args []*core.String) codec.Me
 
 	num, err := arg.ToInt()
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	return t.commandIncrBy(s, key, num)
 }
 
-func (t *StandardServer) CommandDecrBy(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandDecrBy(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -308,7 +306,7 @@ func (t *StandardServer) CommandDecrBy(s *Session, args []*core.String) codec.Me
 
 	num, err := arg.ToInt()
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	return t.commandIncrBy(s, key, -num)
@@ -318,9 +316,9 @@ func (t *StandardServer) CommandDecrBy(s *Session, args []*core.String) codec.Me
 
 // region keys commands
 
-func (t *StandardServer) CommandDel(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandDel(s *Session, args []*String) Message {
 	if len(args) == 0 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	res := 0
@@ -330,12 +328,12 @@ func (t *StandardServer) CommandDel(s *Session, args []*core.String) codec.Messa
 		}
 	}
 
-	return codec.NewInteger(res)
+	return NewInteger(res)
 }
 
-func (t *StandardServer) CommandExists(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandExists(s *Session, args []*String) Message {
 	if len(args) == 0 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	res := 0
@@ -345,23 +343,23 @@ func (t *StandardServer) CommandExists(s *Session, args []*core.String) codec.Me
 		}
 	}
 
-	return codec.NewInteger(res)
+	return NewInteger(res)
 }
 
 // endregion
 
 //region hash commands
 
-func (t *StandardServer) CommandHSet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHSet(s *Session, args []*String) Message {
 	if len(args) < 3 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, _, err := s.db.GetHashOrCreate(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	for i := 1; i < len(args)-1; i += 2 {
@@ -371,22 +369,22 @@ func (t *StandardServer) CommandHSet(s *Session, args []*core.String) codec.Mess
 		ht.Put(field, value)
 	}
 
-	return codec.NewInteger(1)
+	return NewInteger(1)
 }
 
-func (t *StandardServer) CommandHExists(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHExists(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 	if !find {
-		return codec.NewInteger(0)
+		return NewInteger(0)
 	}
 
 	res := 0
@@ -394,116 +392,116 @@ func (t *StandardServer) CommandHExists(s *Session, args []*core.String) codec.M
 		res = 1
 	}
 
-	return codec.NewInteger(res)
+	return NewInteger(res)
 }
 
-func (t *StandardServer) CommandHGet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHGet(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
-	var str *core.String
+	var str *String
 
 	key := args[0]
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 	if find {
 		i, find := ht.Get(args[1])
 		if find {
-			str = i.(*core.String)
+			str = i.(*String)
 		}
 	}
 
-	return codec.NewBulkStr(str)
+	return NewBulkStr(str)
 }
 
-func (t *StandardServer) CommandHGetAll(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHGetAll(s *Session, args []*String) Message {
 	if len(args) < 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if !find {
-		return codec.NewArrayEmpty()
+		return NewArrayEmpty()
 	}
 
-	msg := codec.NewArraySize(ht.Size() << 1)
-	ht.Iterate(func(k *core.String, v interface{}) {
+	msg := NewArraySize(ht.Size() << 1)
+	ht.Iterate(func(k *String, v interface{}) {
 		msg.AppendStr(k)
-		msg.AppendStr(v.(*core.String))
+		msg.AppendStr(v.(*String))
 	})
 
 	return msg
 }
 
-func (t *StandardServer) CommandHKeys(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHKeys(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if !find {
-		return codec.NewArrayEmpty()
+		return NewArrayEmpty()
 	}
 
-	msg := codec.NewArraySize(ht.Size())
-	ht.Iterate(func(k *core.String, v interface{}) {
+	msg := NewArraySize(ht.Size())
+	ht.Iterate(func(k *String, v interface{}) {
 		msg.AppendStr(k)
 	})
 
 	return msg
 }
 
-func (t *StandardServer) CommandHLen(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHLen(s *Session, args []*String) Message {
 	if len(args) < 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 	if !find {
-		return codec.NewInteger(0)
+		return NewInteger(0)
 	}
 
-	return codec.NewInteger(ht.Size())
+	return NewInteger(ht.Size())
 }
 
-func (t *StandardServer) CommandHMGet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHMGet(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	msg := codec.NewArraySize(len(args) - 1)
+	msg := NewArraySize(len(args) - 1)
 	for i := 1; i < len(args); i++ {
 		if find {
 			v, find := ht.Get(args[i])
 			if find {
-				msg.AppendStr(v.(*core.String))
+				msg.AppendStr(v.(*String))
 				continue
 			}
 		}
@@ -513,16 +511,16 @@ func (t *StandardServer) CommandHMGet(s *Session, args []*core.String) codec.Mes
 	return msg
 }
 
-func (t *StandardServer) CommandHMSet(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHMSet(s *Session, args []*String) Message {
 	if len(args) < 3 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, _, err := s.db.GetHashOrCreate(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	for i := 1; i < len(args)-1; i++ {
@@ -532,12 +530,12 @@ func (t *StandardServer) CommandHMSet(s *Session, args []*core.String) codec.Mes
 		ht.Put(f, v)
 	}
 
-	return MessageSimpleOK
+	return SimpleOK
 }
 
-func (t *StandardServer) CommandHIncrBy(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHIncrBy(s *Session, args []*String) Message {
 	if len(args) != 3 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -546,34 +544,34 @@ func (t *StandardServer) CommandHIncrBy(s *Session, args []*core.String) codec.M
 
 	num, err := arg.ToInt()
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	ht, _, _, err := s.db.GetHashOrCreate(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	var str *core.String
+	var str *String
 	v, find := ht.Get(field)
 	if !find {
-		str = core.NewStringStr("0")
+		str = NewStringStr("0")
 		ht.Put(field, str)
 	} else {
-		str = v.(*core.String)
+		str = v.(*String)
 	}
 
 	res, err := str.Incr(num)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	return codec.NewInteger(res)
+	return NewInteger(res)
 }
 
-func (t *StandardServer) CommandHDel(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHDel(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -581,7 +579,7 @@ func (t *StandardServer) CommandHDel(s *Session, args []*core.String) codec.Mess
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	num := 0
@@ -591,12 +589,12 @@ func (t *StandardServer) CommandHDel(s *Session, args []*core.String) codec.Mess
 		}
 	}
 
-	return codec.NewInteger(num)
+	return NewInteger(num)
 }
 
-func (t *StandardServer) CommandHStrLen(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandHStrLen(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -604,19 +602,19 @@ func (t *StandardServer) CommandHStrLen(s *Session, args []*core.String) codec.M
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	num := 0
 	if find {
 		v, f := ht.Get(field)
 		if f {
-			str := v.(*core.String)
+			str := v.(*String)
 			num = str.Len()
 		}
 	}
 
-	return codec.NewInteger(num)
+	return NewInteger(num)
 }
 
 //TODO hincrbyfloat, hrandfield, hcan, hsetnx, hvals
@@ -625,9 +623,9 @@ func (t *StandardServer) CommandHStrLen(s *Session, args []*core.String) codec.M
 
 //region set commands
 
-func (t *StandardServer) CommandSAdd(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSAdd(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -635,24 +633,24 @@ func (t *StandardServer) CommandSAdd(s *Session, args []*core.String) codec.Mess
 
 	ht, _, _, err := s.db.GetHashOrCreate(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if ht.Contains(field) {
-		return codec.NewInteger(0)
+		return NewInteger(0)
 	}
 
-	ht.Put(field, core.HashDefaultValue)
-	return codec.NewInteger(1)
+	ht.Put(field, HashDefaultValue)
+	return NewInteger(1)
 }
 
-func (t *StandardServer) CommandSCard(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSCard(s *Session, args []*String) Message {
 	return t.CommandHLen(s, args)
 }
 
-func (t *StandardServer) CommandSIsMember(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSIsMember(s *Session, args []*String) Message {
 	if len(args) != 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -660,27 +658,27 @@ func (t *StandardServer) CommandSIsMember(s *Session, args []*core.String) codec
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if find && ht.Contains(field) {
-		return codec.NewInteger(1)
+		return NewInteger(1)
 	}
 
-	return codec.NewInteger(0)
+	return NewInteger(0)
 }
 
-func (t *StandardServer) CommandSMembers(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSMembers(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	return t.CommandHKeys(s, args)
 }
 
-func (t *StandardServer) CommandSMIsMember(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSMIsMember(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -688,53 +686,53 @@ func (t *StandardServer) CommandSMIsMember(s *Session, args []*core.String) code
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	res := codec.NewArraySize(len(fields))
+	res := NewArraySize(len(fields))
 	for i := 0; i < len(fields); i++ {
 		if find && ht.Contains(fields[i]) {
-			res.AppendMessage(codec.NewInteger(1))
+			res.AppendMessage(NewInteger(1))
 		} else {
-			res.AppendMessage(codec.NewInteger(0))
+			res.AppendMessage(NewInteger(0))
 		}
 	}
 
 	return res
 }
 
-func (t *StandardServer) CommandSRem(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSRem(s *Session, args []*String) Message {
 	return t.CommandHDel(s, args)
 }
 
-func (t *StandardServer) CommandSRandMember(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandSRandMember(s *Session, args []*String) Message {
 	if len(args) < 1 || len(args) > 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	ht, _, find, err := s.db.GetHash(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	if len(args) == 1 {
-		var str *core.String
+		var str *String
 		if find {
 			str, _, _ = ht.Random()
 		}
-		return codec.NewBulkStr(str)
+		return NewBulkStr(str)
 	} else {
 		arg := args[1]
 		num, err := arg.ToInt()
 		if err != nil {
-			return codec.NewErrorErr(err)
+			return NewErrorErr(err)
 		}
 
-		arr := codec.NewArraySize(num)
+		arr := NewArraySize(num)
 		for i := 0; i < num; i++ {
-			var str *core.String
+			var str *String
 			if find {
 				str, _, _ = ht.Random()
 			}
@@ -750,16 +748,16 @@ func (t *StandardServer) CommandSRandMember(s *Session, args []*core.String) cod
 
 //region list commands
 
-func (t *StandardServer) CommandLLen(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandLLen(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	list, _, find, err := s.db.GetList(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	num := 0
@@ -767,12 +765,12 @@ func (t *StandardServer) CommandLLen(s *Session, args []*core.String) codec.Mess
 		num = list.Len()
 	}
 
-	return codec.NewInteger(num)
+	return NewInteger(num)
 }
 
-func (t *StandardServer) CommandLPush(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandLPush(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -780,19 +778,19 @@ func (t *StandardServer) CommandLPush(s *Session, args []*core.String) codec.Mes
 
 	list, _, _, err := s.db.GetListOrCreate(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	for _, v := range values {
 		list.AddHead(v)
 	}
 
-	return codec.NewInteger(list.Len())
+	return NewInteger(list.Len())
 }
 
-func (t *StandardServer) CommandLPushX(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandLPushX(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -800,7 +798,7 @@ func (t *StandardServer) CommandLPushX(s *Session, args []*core.String) codec.Me
 
 	list, _, find, err := s.db.GetList(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	num := 0
@@ -811,60 +809,60 @@ func (t *StandardServer) CommandLPushX(s *Session, args []*core.String) codec.Me
 		num = list.Len()
 	}
 
-	return codec.NewInteger(num)
+	return NewInteger(num)
 }
 
-func (t *StandardServer) CommandLPop(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandLPop(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	list, _, find, err := s.db.GetList(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	var str *core.String
+	var str *String
 	if find {
 		v, li, find := list.GetHead()
 		if find {
-			str = v.(*core.String)
+			str = v.(*String)
 			list.Remove(li)
 		}
 	}
 
-	return codec.NewBulkStr(str)
+	return NewBulkStr(str)
 }
 
-func (t *StandardServer) CommandRPop(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandRPop(s *Session, args []*String) Message {
 	if len(args) != 1 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
 
 	list, _, find, err := s.db.GetList(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
-	var str *core.String
+	var str *String
 	if find {
 		v, li, find := list.GetTail()
 		if find {
-			str = v.(*core.String)
+			str = v.(*String)
 			list.Remove(li)
 		}
 	}
 
-	return codec.NewBulkStr(str)
+	return NewBulkStr(str)
 }
 
-func (t *StandardServer) CommandRPush(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandRPush(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -872,19 +870,19 @@ func (t *StandardServer) CommandRPush(s *Session, args []*core.String) codec.Mes
 
 	list, _, _, err := s.db.GetListOrCreate(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	for _, v := range values {
 		list.AddTail(v)
 	}
 
-	return codec.NewInteger(list.Len())
+	return NewInteger(list.Len())
 }
 
-func (t *StandardServer) CommandRPushX(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandRPushX(s *Session, args []*String) Message {
 	if len(args) < 2 {
-		return MessageErrorInvalidArgNum
+		return ErrorInvalidArgNum
 	}
 
 	key := args[0]
@@ -892,7 +890,7 @@ func (t *StandardServer) CommandRPushX(s *Session, args []*core.String) codec.Me
 
 	list, _, find, err := s.db.GetList(key)
 	if err != nil {
-		return codec.NewErrorErr(err)
+		return NewErrorErr(err)
 	}
 
 	num := 0
@@ -903,12 +901,12 @@ func (t *StandardServer) CommandRPushX(s *Session, args []*core.String) codec.Me
 		num = list.Len()
 	}
 
-	return codec.NewInteger(num)
+	return NewInteger(num)
 }
 
-func (t *StandardServer) CommandBLPop(s *Session, args []*core.String) codec.Message {
+func (t *StandardServer) CommandBLPop(s *Session, args []*String) Message {
 	//if len(args) != 1 {
-	//	return MessageErrorInvalidArgNum
+	//	return ErrorInvalidArgNum
 	//}
 	//
 	//keys := args[1:]
@@ -916,14 +914,14 @@ func (t *StandardServer) CommandBLPop(s *Session, args []*core.String) codec.Mes
 	//for _, key := range keys {
 	//	list, _, find, err := s.db.GetList(key)
 	//	if err != nil {
-	//		return codec.NewErrorErr(err)
+	//		return NewErrorErr(err)
 	//	}
 	//
 	//	if find && list.Len() > 0 {
 	//		v, li, _ := list.GetHead()
 	//		list.Remove(li)
 	//
-	//		return codec.NewBulkStr(v.(*core.String))
+	//		return NewBulkStr(v.(*String))
 	//	}
 	//}
 	//
