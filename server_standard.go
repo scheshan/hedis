@@ -81,6 +81,10 @@ func (t *StandardServer) initCommands() {
 	t.addCommand("del", t.CommandDel)
 	t.addCommand("exists", t.CommandExists)
 	t.addCommand("expire", t.CommandExpire)
+	t.addCommand("expireat", t.CommandExpireAt)
+	t.addCommand("expiretime", t.CommandExpireTime)
+	t.addCommand("ttl", t.CommandTtl)
+	t.addCommand("persist", t.CommandPersist)
 
 	t.addCommand("hset", t.CommandHSet)
 	t.addCommand("hexists", t.CommandHExists)
@@ -401,10 +405,84 @@ func (t *StandardServer) CommandExpire(s *Session, args []*String) Message {
 		return IntegerZero
 	}
 
-	dur := time.Second * time.Duration(sec)
-	expire := time.Now().Add(dur)
-	obj.ttl = expire.Unix()
+	expireAt := time.Now().Unix()
+	expireAt += int64(sec)
+	obj.ExpireAt(expireAt)
 	s.db.expires.Put(key, obj)
+
+	return IntegerOne
+}
+
+func (t *StandardServer) CommandExpireAt(s *Session, args []*String) Message {
+	if len(args) < 2 {
+		return ErrorInvalidArgNum
+	}
+
+	key := args[0]
+	sec, err := args[1].ToInt()
+	if err != nil {
+		return NewErrorErr(err)
+	}
+
+	obj, find := s.db.Get(key)
+	if !find {
+		return IntegerZero
+	}
+
+	obj.ExpireAt(int64(sec))
+	s.db.expires.Put(key, obj)
+
+	return IntegerOne
+}
+
+func (t *StandardServer) CommandExpireTime(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.db.Get(key)
+	if !find {
+		return NewInteger(-2)
+	}
+	if obj.ttl == 0 {
+		return NewInteger(-1)
+	}
+
+	return NewInteger(int(obj.ttl / 1e9))
+}
+
+func (t *StandardServer) CommandTtl(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.db.Get(key)
+	if !find {
+		return NewInteger(-2)
+	}
+	if obj.ttl == 0 {
+		return NewInteger(-1)
+	}
+
+	res := int(obj.ttl - time.Now().Unix())
+	return NewInteger(res)
+}
+
+func (t *StandardServer) CommandPersist(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	key := args[0]
+	obj, find := s.db.Get(key)
+	if !find || obj.ttl == 0 {
+		return IntegerZero
+	}
+
+	obj.ttl = 0
+	s.db.expires.Remove(key)
 
 	return IntegerOne
 }
