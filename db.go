@@ -163,6 +163,7 @@ func (t *Db) RemoveListBlocking(s *Session, keys ...*String) {
 func NewDb() *Db {
 	db := &Db{}
 	db.ht = NewHash()
+	db.expires = NewHash()
 	db.listBlocking = NewHash()
 
 	return db
