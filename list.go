@@ -1,6 +1,7 @@
 package hedis
 
 type ListFilter func(value interface{}) bool
+type ListFunc func(value interface{})
 
 type List struct {
 	size int
@@ -105,6 +106,14 @@ func (t *List) RemoveFilter(filter ListFilter) bool {
 	}
 
 	return find
+}
+
+func (t *List) Iterate(listFunc ListFunc) {
+	cur := t.head
+	for cur != nil {
+		listFunc(cur.value)
+		cur = cur.next
+	}
 }
 
 func NewList() *List {

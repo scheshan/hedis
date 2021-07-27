@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"regexp"
 	"sync"
 )
 
@@ -49,7 +50,7 @@ type baseServer struct {
 	requests      chan *ClientMessage
 	responses     chan *ClientMessage
 	subscription  *Hash
-	pSubscription *List
+	pSubscription *Hash
 	decoder       *Decoder
 	encoder       *Encoder
 	mutex         *sync.Mutex
@@ -65,7 +66,7 @@ func newBaseServer(config *ServerConfig, srv ServerEventHandler) *baseServer {
 	s.requests = make(chan *ClientMessage, 10240)
 	s.responses = make(chan *ClientMessage, 10240)
 	s.subscription = NewHash()
-	s.pSubscription = NewList()
+	s.pSubscription = NewHash()
 	s.decoder = &Decoder{}
 	s.encoder = &Encoder{}
 	s.mutex = &sync.Mutex{}
@@ -115,6 +116,8 @@ func (t *baseServer) initSession(conn *net.TCPConn) *Session {
 	session.reader = bufio.NewReader(conn)
 	session.writer = bufio.NewWriter(conn)
 	session.messages = make(chan Message, 1024)
+	session.subscription = NewHash()
+	session.pSubscription = NewHash()
 
 	return session
 }
@@ -307,6 +310,12 @@ func (t *baseServer) initCommands() {
 	t.addCommand("ping", t.CommandPing)
 	t.addCommand("quit", t.CommandQuit)
 	t.addCommand("echo", t.CommandEcho)
+
+	t.addCommand("subscribe", t.CommandSubscribe)
+	t.addCommand("unsubscribe", t.CommandUnSubscribe)
+	t.addCommand("psubscribe", t.CommandPSubscribe)
+	t.addCommand("punsubscribe", t.CommandPUnSubscribe)
+	t.addCommand("publish", t.CommandPublish)
 }
 
 func (t *baseServer) CommandNotFound(s *Session, args []*String) Message {
@@ -341,6 +350,149 @@ func (t *baseServer) CommandEcho(s *Session, args []*String) Message {
 	msg := NewBulkStr(args[0])
 
 	return msg
+}
+
+func (t *baseServer) CommandSubscribe(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	for _, channel := range args {
+		if !s.subscription.Contains(channel) {
+			s.subscription.Put(channel, HashDefaultValue)
+
+			v, find := t.subscription.Get(channel)
+			if !find {
+				v = NewList()
+				t.subscription.Put(channel, v)
+			}
+
+			list := v.(*List)
+			list.AddHead(s)
+		}
+	}
+
+	s.flag |= SessionFlagPubSub
+	return nil
+}
+
+func (t *baseServer) CommandUnSubscribe(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	for _, channel := range args {
+		if s.subscription.Contains(channel) {
+			s.subscription.Remove(channel)
+
+			v, find := t.subscription.Get(channel)
+			if find {
+				list := v.(*List)
+				list.RemoveFilter(func(value interface{}) bool {
+					return value == s
+				})
+
+				if list.Len() == 0 {
+					t.subscription.Remove(channel)
+				}
+			}
+		}
+	}
+
+	if s.subscription.Empty() && s.pSubscription.Empty() {
+		s.flag ^= SessionFlagPubSub
+	}
+
+	return nil
+}
+
+func (t *baseServer) CommandPSubscribe(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	for _, channel := range args {
+		if !s.pSubscription.Contains(channel) {
+			s.pSubscription.Put(channel, HashDefaultValue)
+
+			v, find := t.pSubscription.Get(channel)
+			if !find {
+				v = NewList()
+				t.pSubscription.Put(channel, v)
+			}
+
+			list := v.(*List)
+			list.AddHead(s)
+		}
+	}
+
+	s.flag |= SessionFlagPubSub
+	return nil
+}
+
+func (t *baseServer) CommandPUnSubscribe(s *Session, args []*String) Message {
+	if len(args) < 1 {
+		return ErrorInvalidArgNum
+	}
+
+	for _, channel := range args {
+		if s.pSubscription.Contains(channel) {
+			s.pSubscription.Remove(channel)
+
+			v, find := t.pSubscription.Get(channel)
+			if find {
+				list := v.(*List)
+				list.RemoveFilter(func(value interface{}) bool {
+					return value == s
+				})
+
+				if list.Len() == 0 {
+					t.pSubscription.Remove(channel)
+				}
+			}
+		}
+	}
+
+	if s.subscription.Empty() && s.pSubscription.Empty() {
+		s.flag ^= SessionFlagPubSub
+	}
+
+	return nil
+}
+
+func (t *baseServer) CommandPublish(s *Session, args []*String) Message {
+	if len(args) != 2 {
+		return ErrorInvalidArgNum
+	}
+
+	channel := args[0]
+	message := NewBulkStr(args[1])
+
+	res := 0
+
+	v, find := t.subscription.Get(channel)
+	if find {
+		list := v.(*List)
+		list.Iterate(func(value interface{}) {
+			session := value.(*Session)
+			t.writeToSession(session, message)
+			res++
+		})
+	}
+
+	t.pSubscription.Iterate(func(key *String, value interface{}) {
+		regex, _ := regexp.Compile(key.String())
+		if regex.Match(channel.Bytes()) {
+			list := v.(*List)
+			list.Iterate(func(value interface{}) {
+				session := value.(*Session)
+				t.writeToSession(session, message)
+				res++
+			})
+		}
+	})
+
+	return NewInteger(res)
 }
 
 //endregion

@@ -21,22 +21,23 @@ const (
 )
 
 type Session struct {
-	id           int
-	conn         net.Conn
-	server       Server
-	state        SessionState
-	db           *Db
-	auth         bool
-	pre          *Session
-	next         *Session
-	reader       *bufio.Reader
-	writer       *bufio.Writer
-	closeFunc    SessionCloseFunc
-	messages     chan Message
-	running      bool
-	flag         int
-	subscription *Hash
-	listBlocking *Hash
+	id            int
+	conn          net.Conn
+	server        Server
+	state         SessionState
+	db            *Db
+	auth          bool
+	pre           *Session
+	next          *Session
+	reader        *bufio.Reader
+	writer        *bufio.Writer
+	closeFunc     SessionCloseFunc
+	messages      chan Message
+	running       bool
+	flag          int
+	subscription  *Hash
+	pSubscription *Hash
+	listBlocking  *Hash
 }
 
 func (t *Session) String() string {
